@@ -10,12 +10,8 @@
 #pragma once 
 
 #include <ArduinoJson.h>
-#include "Settings.h"
-#include "nvs.h"
-#include "nvs_flash.h"
 
-struct DeviceConfig
-{
+struct DeviceConfig {
   char appKey[38];
   char appSecret[76];
   char sw1_id[26];
