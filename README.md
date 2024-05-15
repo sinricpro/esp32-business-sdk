@@ -27,4 +27,6 @@ sequenceDiagram
   esp32->>esp32: Store credentials
   esp32->>srpa: Notify response
   esp32->>esp32: Exit provisioning mode
+
+  %% https://mermaid.js.org/syntax/sequenceDiagram.html
 ```
