@@ -5,7 +5,6 @@
 #define CONNECTING_WIFI   2
 #define WAIT_CLOUD_CONFIG 3
 #define SUCCESS           4
-
 // errors
 #define ERROR            -1
 #define TIMEOUT          -2
@@ -19,9 +18,4 @@ public:
   static ProvState& getInstance();
   int getState() const { return m_state; }
   void setState(int newState) { m_state = newState; } 
-};
- 
-ProvState& ProvState::getInstance() {
-  static ProvState instance;  // Static instance created only once
-  return instance;
-}
+}; 
