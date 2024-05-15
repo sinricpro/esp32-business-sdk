@@ -6,6 +6,7 @@ sequenceDiagram
   participant srpa as SinricPro App
   participant esp32 as ESP32
   participant srps as SinricPro Server
+  esp32->>esp32: Start provisioning   
   loop
     srpa->>srpa: Scan for Bluetooth devices starting with PROV_
   end 
