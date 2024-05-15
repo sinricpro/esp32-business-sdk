@@ -17,7 +17,7 @@ sequenceDiagram
   esp32->>esp32: Generates a session key
   Note right of esp32:  Session key is encrypted using the app's public key
   esp32->>srpa: Notify session key
-  Note right of srpa:  Session key is decrypted using the app's private key
+  Note right of srpa:  Session key is decrypted using the app's private key <br/> and subsequent messages and encrypted using session key
   srpa->>srpa: The user enters WiFi credentials
   srpa->>esp32: Sends WiFi
   esp32->>esp32: Connects to WiFi
