@@ -12,10 +12,11 @@ sequenceDiagram
   srpa->>esp32: Get provisioning information
   esp32->>srpa: Notify provisioning information
   srpa->>esp32: Authenticate (sends public key)
-  esp32->>esp32: Generates a session key and encrypt it using public key
+  esp32->>esp32: Generates a session key
+  Note right of esp32:  Session key is encrypted using the app's public key
   esp32->>srpa: Notify session key
-  srpa->>srpa: Decrypt the session key using private key
-  srpa->>srpa: The user enter WiFi credentials
+  Note right of srpa:  Session key is decrypted using the app's private key
+  srpa->>srpa: The user enters WiFi credentials
   srpa->>esp32: Sends WiFi
   esp32->>esp32: Connects to WiFi
   esp32->>srpa: Notify WiFi connection status
