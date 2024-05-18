@@ -99,6 +99,41 @@ void handleLedIndicator(int state) {
 
 void handleButton(int state) { }
 
+bool handleProvisioning() {
+   WiFiProv prov(PRODUCT_ID);    
+    
+    prov.onWiFiCredentials([](const char* ssid, const char* password) -> bool {
+      return WiFiUtil::connectToWiFi(ssid, password);
+    });
+
+    prov.onCloudCredentials([](const String &config) -> bool {
+      DynamicJsonDocument jsonConfig(2048);
+      DeserializationError error = deserializeJson(jsonConfig, config);
+      
+      if (error) {
+        Serial.printf("[handleProvisioning()]: deserializeJson() failed: %s\r\n", error.c_str());
+        return false;
+      } else {
+        if (m_configStore.saveJsonConfig(jsonConfig)) {
+          Serial.printf("[handleProvisioning()]: Configuration updated!\r\n");
+          return true;    
+        }
+        else {
+          Serial.printf("[handleProvisioning()]: Failed to save configuration !\r\n");
+          return false;
+        }
+      }
+    });
+
+    prov.loop([](int state) {
+      // You can use loop() to handle buttons press or blink a LED.
+      // handleLedIndicator(state);
+      // handleButton();      
+    });
+
+    return prov.beginProvision();
+}
+
 void setup() {
   Serial.begin(BAUDRATE); Serial.println();
   delay(1000);
@@ -122,42 +157,9 @@ void setup() {
 
   if(!isConfigured) {
     Serial.printf("[setup()]: Begin provisioning!\r\n");    
-    WiFiProv prov(PRODUCT_ID);    
     
-    prov.onWiFiCredentials([](const char* ssid, const char* password) -> bool {
-      return WiFiUtil::connectToWiFi(ssid, password);
-    });
-
-    prov.onCloudCredentials([](const String &config) -> bool {
-      DynamicJsonDocument jsonConfig(2048);
-      DeserializationError error = deserializeJson(jsonConfig, config);
-      
-      if (error) {
-        Serial.printf("[onCloudCredentials()]: deserializeJson() failed: %s\r\n", error.c_str());
-        return false;
-      } else {
-        if (m_configStore.saveJsonConfig(jsonConfig)) {
-          Serial.printf("[onCloudCredentials()]: Configuration updated!\r\n");
-          return true;    
-        }
-        else {
-          Serial.printf("[onCloudCredentials()]: Failed to save configuration !\r\n");
-          return false;
-        }
-      }
-    });
-
-    prov.loop([](int state) {
-      // You can use loop() to handle buttons press or blink a LED.
-      // handleLedIndicator(state);
-      // handleButton();      
-    });
-
-    bool isConfigured = prov.beginProvision(); 
-
-    if(!isConfigured) {
-      // Something went wrong!.   
-      Serial.printf(PSTR("[setup()]: Something went wrong!.\r\n"));
+    if(!handleProvisioning()) {
+      Serial.printf(PSTR("[setup()]: Provisioning failed. Cannot continue!.\r\n"));    
       return;
     }
   }
