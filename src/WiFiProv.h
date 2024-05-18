@@ -5,13 +5,10 @@
 #pragma once 
 
 #include <ArduinoJson.h>
+#include "ProvSettings.h" 
 #include "ProvUtil.h" 
 #include "ProvDebug.h"
 #include "ProvState.h"
-#include <WiFi.h>
-#include "SPIFFS.h"
-#include <esp_wifi.h>
-#include <WiFiUDP.h> 
 #include "BLEProv.h"
 
 class WiFiProv {

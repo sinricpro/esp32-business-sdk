@@ -10,6 +10,8 @@
 #pragma once 
 
 #include <ArduinoJson.h>
+#include <Preferences.h>
+#include "SPIFFS.h"
 
 struct DeviceConfig {
   char appKey[38];
@@ -29,10 +31,7 @@ class ConfigStore {
     
   private:
     DeviceConfig &config;
-    
-    #ifdef ESP32
-      Preferences preferences;
-    #endif
+    Preferences preferences;
 };
 
 ConfigStore::ConfigStore(DeviceConfig &config) : config(config) { }
@@ -45,8 +44,6 @@ ConfigStore::~ConfigStore(){ }
 */  
 bool ConfigStore::loadConfig() {
   Serial.printf("[ConfigStore.loadConfig()] Loading config...\r\n");
-
-  // TODO store in NVS.
   
   File configFile = SPIFFS.open(PRODUCT_CONFIG_FILE, "r");
   if (!configFile) {
@@ -58,7 +55,7 @@ bool ConfigStore::loadConfig() {
   DeserializationError err = deserializeJson(doc, configFile);
 
   if (err) {
-    #ifdef DEBUG_PROV_LOG
+    #ifdef ENABLE_DEBUG
       Serial.print("File size: ");
       Serial.println(configFile.size());
 
@@ -73,7 +70,7 @@ bool ConfigStore::loadConfig() {
     return false;
   }
 
-  #ifdef DEBUG_PROV_LOG
+  #ifdef ENABLE_DEBUG
     serializeJsonPretty(doc, Serial);
   #endif
     

@@ -9,29 +9,25 @@
 //  Change Tools -> Flash Size -> Minimun SPIFF
 //  To enable ESP32 logs: Tools -> Core Debug Level -> Verbose
 
-#define PRODUCT_ID          "66345255d495a7cbfa78445f"  // Product ID from Buiness Portal.
-#define FIRMWARE_VERSION    "1.1.1"                     // Your firmware version. Must be above SinricPro.h!
-
-#define ENABLE_DEBUG // Enable Logs.
-#define SINRICPRO_NOSSL // TODO: Remove later
-
-#ifdef ENABLE_DEBUG
-  #define DEBUG_ESP_PORT Serial
-  #define NODEBUG_WEBSOCKETS
-  #define NDEBUG
-  #define DEBUG_PROV_LOG   // Print provisioning debug logs
-#endif
-
-#define BAUDRATE          115200
+#include <Arduino.h>
 
 #if defined(ARDUINO_ARCH_ESP32) || defined(ESP32) 
 #else
 #error "Architecture not supported!"
 #endif
 
-#include <WiFi.h>
-#include <Preferences.h>
-#include "SPIFFS.h"
+#define PRODUCT_ID          "66345255d495a7cbfa78445f"  // Product ID from Buiness Portal.
+#define FIRMWARE_VERSION    "1.1.1"                     // Your firmware version. Must be above SinricPro.h!
+
+#define ENABLE_DEBUG // Enable Logs.
+
+#ifdef ENABLE_DEBUG
+  #define DEBUG_ESP_PORT Serial
+  #define NODEBUG_WEBSOCKETS
+  #define NDEBUG
+#endif
+
+#define BAUDRATE          115200
 
 #include <SinricProBusinessSdk.h>
 
@@ -78,7 +74,7 @@ void setupSinricPro() {
    
   SinricPro.onConnected([]() { Serial.printf("[main.setupSinricPro()]: Connected to SinricPro\r\n"); });
   SinricPro.onDisconnected([]() { Serial.printf("[main.setupSinricPro()]: Disconnected from SinricPro\r\n"); });
-  SinricPro.begin(m_config.appKey, m_config.appSecret, "192.168.1.100");
+  SinricPro.begin(m_config.appKey, m_config.appSecret);
 }
 
 /**
@@ -103,42 +99,6 @@ void handleLedIndicator(int state) {
 
 void handleButton(int state) { }
 
-void handleWiFiProvisioning() {
-  WiFiProv prov(PRODUCT_ID);    
-  
-  prov.onWiFiCredentials([](const char* ssid, const char* password) -> bool {
-    return WiFiUtil::connectToWiFi(ssid, password);
-  });
-
-  prov.onCloudCredentials([](const String &config) -> bool {
-    DynamicJsonDocument jsonConfig(2048);
-    DeserializationError error = deserializeJson(jsonConfig, config);
-    
-    if (error) {
-      Serial.printf("[onCloudCredentials()]: deserializeJson() failed: %s\r\n", error.c_str());
-      return false;
-    } else {
-      if (m_configStore.saveJsonConfig(jsonConfig)) {
-        Serial.printf("[onCloudCredentials()]: Configuration updated!\r\n");
-        return true;    
-      }
-      else {
-        Serial.printf("[onCloudCredentials()]: Failed to save configuration !\r\n");
-        return false;
-      }
-    }
-  });
-
-  prov.loop([](int state) {
-    // You can use loop() to handle buttons press or blink a LED.
-    // handleLedIndicator(state);
-    // handleButton();      
-  });
-
-  Serial.printf("[handleWiFiProvisioning()]: Begin provisioning!\r\n");
-  return prov.beginProvision(); 
-}
-
 void setup() {
   Serial.begin(BAUDRATE); Serial.println();
   delay(1000);
@@ -161,7 +121,40 @@ void setup() {
   Serial.printf("[setup()]: Provisioned ? %s\r\n", isConfigured ? "YES" : "NO");
 
   if(!isConfigured) {
-    bool isConfigured = handleWiFiProvisioning();
+    Serial.printf("[setup()]: Begin provisioning!\r\n");    
+    WiFiProv prov(PRODUCT_ID);    
+    
+    prov.onWiFiCredentials([](const char* ssid, const char* password) -> bool {
+      return WiFiUtil::connectToWiFi(ssid, password);
+    });
+
+    prov.onCloudCredentials([](const String &config) -> bool {
+      DynamicJsonDocument jsonConfig(2048);
+      DeserializationError error = deserializeJson(jsonConfig, config);
+      
+      if (error) {
+        Serial.printf("[onCloudCredentials()]: deserializeJson() failed: %s\r\n", error.c_str());
+        return false;
+      } else {
+        if (m_configStore.saveJsonConfig(jsonConfig)) {
+          Serial.printf("[onCloudCredentials()]: Configuration updated!\r\n");
+          return true;    
+        }
+        else {
+          Serial.printf("[onCloudCredentials()]: Failed to save configuration !\r\n");
+          return false;
+        }
+      }
+    });
+
+    prov.loop([](int state) {
+      // You can use loop() to handle buttons press or blink a LED.
+      // handleLedIndicator(state);
+      // handleButton();      
+    });
+
+    bool isConfigured = prov.beginProvision(); 
+
     if(!isConfigured) {
       // Something went wrong!.   
       Serial.printf(PSTR("[setup()]: Something went wrong!.\r\n"));

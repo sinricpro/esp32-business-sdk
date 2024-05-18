@@ -304,7 +304,7 @@ void BLEProvClass::handleProvInfo(NimBLECharacteristic* pCharacteristic) {
   std::string jsonString;
   StaticJsonDocument<200> doc;
   doc[F("retailItemId")] = m_retailItemId;
-  doc[F("protocolVersion")] = BLE_PROV_PROTOCOL_VERSION;
+  doc[F("version")] = BLE_PROV_VERSION;
        
   serializeJsonPretty(doc, jsonString);
 
