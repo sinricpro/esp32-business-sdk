@@ -1,5 +1,6 @@
 # Provisioning Workflow
 
+
 ```mermaid
 sequenceDiagram
   autonumber
@@ -7,9 +8,7 @@ sequenceDiagram
   participant esp32 as ESP32
   participant srps as SinricPro Server
   esp32->>esp32: Start provisioning   
-  loop
-    srpa->>srpa: Scan for Bluetooth devices starting with name PROV_
-  end 
+  srpa->>srpa: Scan for Bluetooth devices starting with name PROV_
   srpa->>srpa: Generate RSA Key   
   srpa->>esp32: Get provisioning information
   esp32->>srpa: Notify provisioning information
