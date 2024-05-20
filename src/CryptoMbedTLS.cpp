@@ -1,12 +1,10 @@
+/*
+ *  Copyright (c) 2019 - 2024 Sinric. All rights reserved.
+ *  Licensed under Creative Commons Attribution-Share Alike (CC BY-SA)
+ *
+ *  This file is part of the Sinric Pro ESP32 Business SDK (https://github.com/sinricpro/esp32-business-sdk)
+ */
 #include "CryptoMbedTLS.h"
-
-CryptoMbedTLS::CryptoMbedTLS()
-{
-}
-
-CryptoMbedTLS::~CryptoMbedTLS()
-{
-}
 
 /**
  * @brief Decode a base64 string
@@ -195,12 +193,12 @@ void CryptoMbedTLS::deinitMbedTLS() {
 }
 
 /**
- * @brief Generate a shared secret using client's public key
+ * @brief Generate a shared secret using public key
  *
  * @param public_key_pem
  *      public RSA key in pem format
  * @param data
- *      Reference to shared key encrypted using given public key pem file in base64 format.
+ *      Reference to shared key.
  */
 bool CryptoMbedTLS::getSharedSecret(const std::string& public_key_pem, std::string& data) {
   DEBUG_PROV(PSTR("[CryptoMbedTLS.getSharedSecret()] Loading Public key..."));    
@@ -271,4 +269,13 @@ bool CryptoMbedTLS::getSharedSecret(const std::string& public_key_pem, std::stri
   DEBUG_PROV(PSTR("[CryptoMbedTLS.getSharedSecret()] Done...\r\n"));
   m_aes_initialized = true;
   return true;
+}
+
+
+CryptoMbedTLS::CryptoMbedTLS()
+{
+}
+
+CryptoMbedTLS::~CryptoMbedTLS()
+{
 }

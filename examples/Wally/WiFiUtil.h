@@ -1,8 +1,8 @@
 /*
- *  Copyright (c) 2019-2024 Sinric. All rights reserved.
+ *  Copyright (c) 2019 - 2024 Sinric. All rights reserved.
  *  Licensed under Creative Commons Attribution-Share Alike (CC BY-SA)
  *
- *  This file is part of the Sinric Pro (https://github.com/sinricpro/)
+ *  This file is part of the Sinric Pro ESP32 Business SDK (https://github.com/sinricpro/esp32-business-sdk)
  */
 
 #pragma once 
@@ -50,14 +50,18 @@ bool WiFiUtil::connectToWiFi(const char * wifi_ssid, const char * wifi_password)
       WiFi.begin(wifi_ssid, wifi_password);
     } else {
       Serial.printf("[WiFiUtil.connectToWiFi()]: Connecting to WiFi...\r\n");
-      WiFi.begin(); // Use credentails in NVM    
+      WiFi.begin(); // Use credentails stored in NVS
     }
 
-    uint8_t timeout = 40 * 2; // 20 seconds
-    
-    while (timeout && (WiFi.status() != WL_CONNECTED || WiFi.localIP() == IPAddress(0,0,0,0))) {
-      delay(500);
-      timeout--;
+    unsigned long startMillis = millis();
+        
+    while (WiFi.status() != WL_CONNECTED || WiFi.localIP() == IPAddress(0,0,0,0)) {
+      delay(100);
+      if ((millis() - startMillis) > 15000) {
+        //return after 15 seconds.
+        break;            
+      }
+
       Serial.printf(".");
     }
     

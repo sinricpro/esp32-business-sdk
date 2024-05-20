@@ -1,9 +1,15 @@
-/* 
-  Copyright (c) 2019-2024 Sinric
-*/
+/*
+ *  Copyright (c) 2019 - 2024 Sinric. All rights reserved.
+ *  Licensed under Creative Commons Attribution-Share Alike (CC BY-SA)
+ *
+ *  This file is part of the Sinric Pro ESP32 Business SDK (https://github.com/sinricpro/esp32-business-sdk)
+ */
 
 #include "BLEProv.h"
 
+/**
+ * @brief BLEProvClass constuctor.
+ */
 BLEProvClass::BLEProvClass() 
 : m_begin(false)
 , m_WiFiCredentialsCallbackHandler(nullptr),
@@ -13,8 +19,9 @@ BLEProvClass::BLEProvClass()
   m_uuidWiFiConfig(BLE_WIFI_CONFIG_UUID),
   m_uuidWiFiConfigNotify(BLE_WIFI_CONFIG_NOTIFY_UUID),
   m_uuidKeyExchange(BLE_KEY_EXCHANGE_UUID),
-  m_uuidAuthConfig(BLE_AUTH_CONFIG_UUID),  
-  m_uuidAuthConfigNotify(BLE_AUTH_CONFIG_NOTIFY_UUID),
+  m_uuidKeyExchangeNotify(BLE_KEY_EXCHANGE_NOTIFY_UUID),
+  m_uuidCloudCredentialConfig(BLE_AUTH_CONFIG_UUID),  
+  m_uuidCloudCredentialConfigNotify(BLE_AUTH_CONFIG_NOTIFY_UUID),
   m_uuidWiFiList(BLE_WIFI_LIST_UUID),
   m_uuidWiFiListNotify(BLE_WIFI_LIST_NOTIFY_UUID),
   m_uuidProvInfo(BLE_INFO_UUID),
@@ -39,23 +46,31 @@ void BLEProvClass::begin(const String &deviceName, const String &retailItemId) {
 
   m_pService = m_pServer->createService(m_uuidService);
 
-  m_provWiFiConfig = m_pService->createCharacteristic(m_uuidWiFiConfig, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE); 
+  m_provWiFiConfig = m_pService->createCharacteristic(m_uuidWiFiConfig, NIMBLE_PROPERTY::WRITE_NR); 
   m_provWiFiConfig->setValue("wifi_config");
   m_provWiFiConfig->setCallbacks(this);
-
-  m_provKeyExchange = m_pService->createCharacteristic(m_uuidKeyExchange, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE); 
-  m_provKeyExchange->setValue("key_exchange");
-  m_provKeyExchange->setCallbacks(this); 
-
-  m_provAuthConfig = m_pService->createCharacteristic(m_uuidAuthConfig, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE); 
-  m_provAuthConfig->setValue("auth_config");
-  m_provAuthConfig->setCallbacks(this); 
 
   m_provWiFiConfigNotify = m_pService->createCharacteristic(m_uuidWiFiConfigNotify, NIMBLE_PROPERTY::NOTIFY); 
   m_provWiFiConfigNotify->setValue("wifi_config_notify");
   m_provWiFiConfigNotify->setCallbacks(this);
 
-  m_provWiFiList = m_pService->createCharacteristic(m_uuidWiFiList, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE); 
+  m_provKeyExchange = m_pService->createCharacteristic(m_uuidKeyExchange, NIMBLE_PROPERTY::WRITE_NR); 
+  m_provKeyExchange->setValue("key_exchange");
+  m_provKeyExchange->setCallbacks(this); 
+
+  m_provKeyExchangeNotify = m_pService->createCharacteristic(m_uuidKeyExchangeNotify, NIMBLE_PROPERTY::NOTIFY); 
+  m_provKeyExchangeNotify->setValue("key_exchange_notify");
+  m_provKeyExchangeNotify->setCallbacks(this); 
+
+  m_provCloudCredentialConfig = m_pService->createCharacteristic(m_uuidCloudCredentialConfig, NIMBLE_PROPERTY::WRITE); 
+  m_provCloudCredentialConfig->setValue("cloud_credential_config");
+  m_provCloudCredentialConfig->setCallbacks(this); 
+
+  m_provCloudCredentialConfigNotify = m_pService->createCharacteristic(m_uuidCloudCredentialConfigNotify, NIMBLE_PROPERTY::NOTIFY); 
+  m_provCloudCredentialConfigNotify->setValue("cloud_credential_config_notify");
+  m_provCloudCredentialConfigNotify->setCallbacks(this);
+
+  m_provWiFiList = m_pService->createCharacteristic(m_uuidWiFiList, NIMBLE_PROPERTY::WRITE_NR); 
   m_provWiFiList->setValue("wifi_list");
   m_provWiFiList->setCallbacks(this); 
 
@@ -63,7 +78,7 @@ void BLEProvClass::begin(const String &deviceName, const String &retailItemId) {
   m_provWiFiListNotify->setValue("wifi_list_notify");
   m_provWiFiListNotify->setCallbacks(this);
 
-  m_provInfo = m_pService->createCharacteristic(m_uuidProvInfo, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE); 
+  m_provInfo = m_pService->createCharacteristic(m_uuidProvInfo, NIMBLE_PROPERTY::WRITE_NR); 
   m_provInfo->setValue("prov_info");
   m_provInfo->setCallbacks(this); 
 
@@ -71,9 +86,6 @@ void BLEProvClass::begin(const String &deviceName, const String &retailItemId) {
   m_provInfoNotify->setValue("prov_info_notify");
   m_provInfoNotify->setCallbacks(this);
 
-  m_provAuthConfigNotify = m_pService->createCharacteristic(m_uuidAuthConfigNotify, NIMBLE_PROPERTY::NOTIFY); 
-  m_provAuthConfigNotify->setValue("auth_config_info_notify");
-  m_provAuthConfigNotify->setCallbacks(this);
  
   m_pService->start();
   
@@ -88,14 +100,13 @@ void BLEProvClass::begin(const String &deviceName, const String &retailItemId) {
 }
 
 /**
-* @brief Generate a session encryption key using client's public key.
+* @brief Generate a session encryption key using public key.
 */
 void BLEProvClass::handleKeyExchange(const std::string& publicKey, NimBLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleKeyExchange()] Start!\r\n"));
 
   struct KeyExchangeData {
     BLEProvClass* provClass;
-    NimBLECharacteristic* characteristic;
     const char* publicKey;
   };
 
@@ -106,14 +117,13 @@ void BLEProvClass::handleKeyExchange(const std::string& publicKey, NimBLECharact
   }
 
   data->provClass = this;
-  data->characteristic = pCharacteristic;
   data->publicKey = publicKey.c_str();
 
   void (*onCharacteristicWriteTask)(void*) = [](void* param) {
     KeyExchangeData* data = static_cast<KeyExchangeData*>(param);
     std::string sessionKey;
     std::string publicKey(data->publicKey);
-  
+
     if(data->provClass->m_crypto.initMbedTLS()) {
      data->provClass->m_crypto.getSharedSecret(publicKey, sessionKey);      
     }    
@@ -122,13 +132,13 @@ void BLEProvClass::handleKeyExchange(const std::string& publicKey, NimBLECharact
 
     DEBUG_PROV(PSTR("[BLEProvClass.handleKeyExchange()] Encrypted session key is: %s\r\n"), sessionKey.c_str());      
 
-    data->characteristic->setValue(sessionKey);
-    data->characteristic->notify(true);
+    data->provClass->splitWrite(data->provClass->m_provKeyExchangeNotify, sessionKey);
     
     vTaskDelete(NULL);
   };
 
-  xTaskCreatePinnedToCore(onCharacteristicWriteTask, "BLEProvCharacteristicTask", 12288, data, 0, NULL, 0); // MbedTLS needs a large stack size
+  // Needs to run in a RTOS Task because MbedTLS crypto stack needs a large stack 
+  xTaskCreatePinnedToCore(onCharacteristicWriteTask, "BLEProvCharacteristicTask", 12288, data, 0, NULL, 0); 
 }
 
  
@@ -165,7 +175,7 @@ void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredenti
          serializeJsonPretty(doc, jsonString); 
          DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Response: %s\r\n"), jsonString.c_str());    
     
-         splitWrite(m_provAuthConfigNotify, jsonString);
+         splitWrite(m_provCloudCredentialConfigNotify, jsonString);
 
          DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Notified!\r\n"));    
 
@@ -197,7 +207,7 @@ void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredenti
 */
 void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()] Start!\r\n"));  
-
+ 
   if (m_WiFiCredentialsCallbackHandler) {
      std::vector<uint8_t> decoded = m_crypto.base64Decode(wificonfig);
      m_crypto.aesCTRXdecrypt(m_crypto.key, m_crypto.iv, decoded);
@@ -219,7 +229,7 @@ void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharact
      } else {
         StaticJsonDocument<200> doc;
         doc[F("success")] = false;
-        doc[F("message")] = F("Failed to connect to WiFi..!");
+        doc[F("message")] = F("Failed to connect to WiFi. Is password correct?");
         serializeJsonPretty(doc, jsonString);
      }
 
@@ -250,10 +260,21 @@ void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharact
 void BLEProvClass::handleWiFiList(NimBLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] Start!\r\n"));  
 
-  int total = WiFi.scanNetworks();
+  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] Scanning networks..!\r\n")); 
+  WiFi.scanNetworks(false);
+  int ret = WiFi.scanComplete();
+  while (ret == WIFI_SCAN_RUNNING) {
+    ret = WiFi.scanComplete();
+    delay(50);
+  } 
+  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] Scanning completed..!\r\n")); 
+
+  if (ret == WIFI_SCAN_FAILED) { 
+    DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] Scan failed!\r\n"));
+  }
 
   String jsonString = "[";
-  for (int i = 0; i < total; ++i) {
+  for (int i = 0; i < ret; ++i) {
       if(i != 0) jsonString += ",";
       jsonString += "{\"ssid\":\"" + WiFi.SSID(i) + "\",";
       jsonString += "\"rssi\":" + String(WiFi.RSSI(i)) + "}";
@@ -323,8 +344,8 @@ void BLEProvClass::onWrite(NimBLECharacteristic* pCharacteristic, ble_gap_conn_d
   else if (pCharacteristic == m_provWiFiConfig && m_provWiFiConfig->getDataLength()) { 
     handleWiFiConfig(m_provWiFiConfig->getValue(), pCharacteristic);
   }
-  else if (pCharacteristic == m_provAuthConfig && m_provAuthConfig->getDataLength()) { 
-    handleCloudCredentialsConfig(m_provAuthConfig->getValue(), pCharacteristic);
+  else if (pCharacteristic == m_provCloudCredentialConfig && m_provCloudCredentialConfig->getDataLength()) { 
+    handleCloudCredentialsConfig(m_provCloudCredentialConfig->getValue(), pCharacteristic);
   }
   else if (pCharacteristic == m_provWiFiList) { 
     handleWiFiList(pCharacteristic);

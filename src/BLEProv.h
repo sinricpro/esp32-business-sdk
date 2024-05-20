@@ -1,8 +1,14 @@
-/* 
-  Copyright (c) 2019-2024 Sinric
-*/
+/*
+ *  Copyright (c) 2019 - 2024 Sinric. All rights reserved.
+ *  Licensed under Creative Commons Attribution-Share Alike (CC BY-SA)
+ *
+ *  This file is part of the Sinric Pro ESP32 Business SDK (https://github.com/sinricpro/esp32-business-sdk)
+ * 
+ *  @brief This class (BLEProvClass) provides functionalities for Bluetooth Low Energy (BLE) provisioning on an ESP32 device. 
+ */
 
 #pragma once 
+
 #include <ArduinoJson.h>
 #include <NimBLEDevice.h>
 #include <WiFi.h>
@@ -63,8 +69,9 @@ class BLEProvClass : protected NimBLECharacteristicCallbacks, NimBLEServerCallba
     NimBLECharacteristic *m_provWiFiConfig; 
     NimBLECharacteristic *m_provWiFiConfigNotify; 
     NimBLECharacteristic *m_provKeyExchange;
-    NimBLECharacteristic *m_provAuthConfig;  
-    NimBLECharacteristic *m_provAuthConfigNotify;  
+    NimBLECharacteristic *m_provKeyExchangeNotify;
+    NimBLECharacteristic *m_provCloudCredentialConfig;  
+    NimBLECharacteristic *m_provCloudCredentialConfigNotify;  
     NimBLECharacteristic *m_provWiFiList;  
     NimBLECharacteristic *m_provWiFiListNotify;  
     NimBLECharacteristic *m_provInfo;  
@@ -75,23 +82,25 @@ class BLEProvClass : protected NimBLECharacteristicCallbacks, NimBLEServerCallba
     std::string m_receivedCloudCredentialsConfig;
     volatile bool m_provConfigDone = false;
 
-    const std::string BLE_SERVICE_UUID            = "0000ffff-0000-1000-8000-00805f9b34fb";
-    const std::string BLE_WIFI_CONFIG_UUID        = "00000001-0000-1000-8000-00805f9b34fb";
-    const std::string BLE_KEY_EXCHANGE_UUID       = "00000002-0000-1000-8000-00805f9b34fb";
-    const std::string BLE_AUTH_CONFIG_UUID        = "00000003-0000-1000-8000-00805f9b34fb";
-    const std::string BLE_WIFI_CONFIG_NOTIFY_UUID = "00000004-0000-1000-8000-00805f9b34fb";    
-    const std::string BLE_WIFI_LIST_UUID          = "00000005-0000-1000-8000-00805f9b34fb";    
-    const std::string BLE_WIFI_LIST_NOTIFY_UUID   = "00000006-0000-1000-8000-00805f9b34fb";    
-    const std::string BLE_INFO_UUID               = "00000007-0000-1000-8000-00805f9b34fb";    
-    const std::string BLE_INFO_NOTIFY_UUID        = "00000008-0000-1000-8000-00805f9b34fb";    
-    const std::string BLE_AUTH_CONFIG_NOTIFY_UUID = "00000009-0000-1000-8000-00805f9b34fb";
+    const std::string BLE_SERVICE_UUID             = "0000ffff-0000-1000-8000-00805f9b34fb";
+    const std::string BLE_WIFI_CONFIG_UUID         = "00000001-0000-1000-8000-00805f9b34fb";
+    const std::string BLE_KEY_EXCHANGE_UUID        = "00000002-0000-1000-8000-00805f9b34fb";
+    const std::string BLE_AUTH_CONFIG_UUID         = "00000003-0000-1000-8000-00805f9b34fb";
+    const std::string BLE_WIFI_CONFIG_NOTIFY_UUID  = "00000004-0000-1000-8000-00805f9b34fb";    
+    const std::string BLE_WIFI_LIST_UUID           = "00000005-0000-1000-8000-00805f9b34fb";    
+    const std::string BLE_WIFI_LIST_NOTIFY_UUID    = "00000006-0000-1000-8000-00805f9b34fb";    
+    const std::string BLE_INFO_UUID                = "00000007-0000-1000-8000-00805f9b34fb";    
+    const std::string BLE_INFO_NOTIFY_UUID         = "00000008-0000-1000-8000-00805f9b34fb";    
+    const std::string BLE_AUTH_CONFIG_NOTIFY_UUID  = "00000009-0000-1000-8000-00805f9b34fb";
+    const std::string BLE_KEY_EXCHANGE_NOTIFY_UUID = "00000010-0000-1000-8000-00805f9b34fb";
 
     NimBLEUUID m_uuidService;   
     NimBLEUUID m_uuidWiFiConfig; 
     NimBLEUUID m_uuidWiFiConfigNotify;
     NimBLEUUID m_uuidKeyExchange;
-    NimBLEUUID m_uuidAuthConfig;
-    NimBLEUUID m_uuidAuthConfigNotify;
+    NimBLEUUID m_uuidKeyExchangeNotify;
+    NimBLEUUID m_uuidCloudCredentialConfig;
+    NimBLEUUID m_uuidCloudCredentialConfigNotify;
     NimBLEUUID m_uuidWiFiList;
     NimBLEUUID m_uuidWiFiListNotify;
     NimBLEUUID m_uuidProvInfo;

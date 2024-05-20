@@ -1,8 +1,8 @@
 /*
- *  Copyright (c) 2019-2024 Sinric. All rights reserved.
+ *  Copyright (c) 2019 - 2024 Sinric. All rights reserved.
  *  Licensed under Creative Commons Attribution-Share Alike (CC BY-SA)
  *
- *  This file is part of the Sinric Pro (https://github.com/sinricpro/)
+ *  This file is part of the Sinric Pro ESP32 Business SDK (https://github.com/sinricpro/esp32-business-sdk)
  */
  
 // Notes:
@@ -157,9 +157,10 @@ void setup() {
 
   if(!isConfigured) {
     Serial.printf("[setup()]: Begin provisioning!\r\n");    
-    
+
     if(!handleProvisioning()) {
       Serial.printf(PSTR("[setup()]: Provisioning failed. Cannot continue!.\r\n"));    
+      ESP.restart();
       return;
     }
   }

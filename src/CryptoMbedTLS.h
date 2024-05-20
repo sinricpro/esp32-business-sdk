@@ -1,6 +1,12 @@
-/* 
-  Copyright (c) 2019-2024 Sinric
-*/
+/*
+ *  Copyright (c) 2019 - 2024 Sinric. All rights reserved.
+ *  Licensed under Creative Commons Attribution-Share Alike (CC BY-SA)
+ *
+ *  This file is part of the Sinric Pro ESP32 Business SDK (https://github.com/sinricpro/esp32-business-sdk)
+ *  
+ *  @brief This class (CryptoMbedTLS) provides essential cryptographic functionalities like base64 encoding/decoding, 
+ *  AES CTR encryption/decryption, and RSA key exchange for secure communication during BLE provisioning.
+ */
 
 #pragma once 
 
