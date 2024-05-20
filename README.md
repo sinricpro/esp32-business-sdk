@@ -1,3 +1,15 @@
+# SinricPro Business SDK
+
+The SinricPro Business SDK empowers you to develop commercial products quickly. Prototype and launch in days, not weeks.
+
+For more information, visit https://sinric.pro.
+
+**This library supports only ESP32.**
+
+## How to use this library
+
+TODO:
+
 # Provisioning Workflow
 
 
