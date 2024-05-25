@@ -18,7 +18,6 @@ This document outlines the provisioning process between an ESP32 device and a mo
 
 ```mermaid
 sequenceDiagram
-  autonumber
   participant srpa as SinricPro App
   participant esp32 as ESP32
   participant srps as SinricPro Server
