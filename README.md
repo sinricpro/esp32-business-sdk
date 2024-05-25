@@ -8,9 +8,12 @@ For more information, visit https://sinric.pro.
 
 ## How to use this library
 
-TODO: Move to Separate page later when repo is public.
+TODO: Move to a Separate page later when repo is public.
 
-# Provisioning Workflow
+# Provisioning 
+
+This document outlines the provisioning process between an ESP32 device and a mobile application.
+
 
 
 ```mermaid
@@ -46,23 +49,23 @@ sequenceDiagram
 ```
 
 
-##### 1. Start provisioning.
+### 1. Start provisioning.
 
-The ESP32 starts listening on Bluetooth `PROV_` hostname.  This is the hostname that the app will look for when scanning for devices.
- 
-##### 2. Scanning.
+The ESP32 starts in provisioning mode, advertising itself with a Bluetooth hostname prefixed with `PROV_`. This allows the mobile app to identify nearby devices ready for provisioning.
 
-The app scans for nearby Bluetooth devices for 15 seconds starting with the name PROV_. If more than 1 device is found, the app asks the user to select one. 
+### 2. Scanning.
 
-##### 3. Connect to ESP32.
+The mobile app scans for Bluetooth devices for 15 seconds, searching for names starting with PROV_. If multiple devices are found, the user will be prompted to select the desired one.
+
+### 3. Connect to ESP32.
 
 The app connects to the ESP32 and requests MTU size 512 (default is 23). 
 
-##### 3. App request provisioning information. 
+### 3. App request provisioning information. 
 
-1. The app writes to characteristics BLE_PROV_INFO_UUID `00000007-0000-1000-8000-00805f9b34fb` to get the product details.  
+1. The app writes to characteristic BLE_PROV_INFO_UUID `00000007-0000-1000-8000-00805f9b34fb` to get the product details.  
 
-2. The ESP32 notifies the app with the below payload on characteristics BLE_INFO_NOTIFY_UUID `00000008-0000-1000-8000-00805f9b34fb`
+2. The ESP32 notifies the app with the below payload on characteristic BLE_INFO_NOTIFY_UUID `00000008-0000-1000-8000-00805f9b34fb`
 
 `{ "retailItemId": "xxxx", "version": "1" }`
 
@@ -71,33 +74,33 @@ version = Is the provisioning protocol version. Right now it's set to 1
 
 3. The app loads the product details from the server and shows the product details to the user. The user clicks `Continue` in the app.
 
-##### 3. Authenticate.
+### 3. Authenticate.
 
 1. The app generates an RSA key pair. 
-2. The app writes the public key to characteristics BLE_KEY_EXCHANGE_UUID `00000002-0000-1000-8000-00805f9b34fb`
+2. The app writes the public key to characteristic BLE_KEY_EXCHANGE_UUID `00000002-0000-1000-8000-00805f9b34fb`
 3. The ESP32 loads the public key using `mbedtls_pk_parse_public_key` 
 4. The ESP32 generates a random 32-byte session key using `mbedtls_ctr_drbg_random`. 
 5. The ESP32 encrypts the session key using `mbedtls_pk_encrypt` and converts to base64
-6. The ESP32 notifies the encrypted session key on BLE characteristics BLE_KEY_EXCHANGE_NOTIFY_UUID `00000010-0000-1000-8000-00805f9b34fb`
+6. The ESP32 notifies the encrypted session key on BLE characteristic BLE_KEY_EXCHANGE_NOTIFY_UUID `00000010-0000-1000-8000-00805f9b34fb`
 7. The app decodes base64 and decrypts the session key using the private key (in step 1)
 
 
-##### 4. WIFI.
+### 4. WIFI.
 
 1. The user inputs WIFI credentials and clicks configure.
 2. The app encrypts the WiFi credentials using the session key
-3. The app writes encrypted wifi credentials to BLE characteristics BLE_WIFI_CONFIG_UUID  `00000001-0000-1000-8000-00805f9b34fb`
+3. The app writes encrypted wifi credentials to BLE characteristic BLE_WIFI_CONFIG_UUID  `00000001-0000-1000-8000-00805f9b34fb`
 4. The ESP32 connects to the WiFi network and notifies the following on BLE_WIFI_CONFIG_NOTIFY_UUID `00000004-0000-1000-8000-00805f9b34fb`
 
 `{ "success": true }` or `{ "success": false, "message" : "connection failed!" }`
 
-##### 5. Enter product details and configure.
+### 5. Enter product details and configure.
 
 1. The user enters the product details.  name, and description etc..
 2. The user clicks save.
 3. The app creates the devices on the server.
 4. The app encrypts credentials/device IDs using the session key.
-5. The app writes encrypted cloud configuration data to characteristics BLE_CLOUD_CREDENTIAL_CONFIG_UUID  `00000003-0000-1000-8000-00805f9b34fb`
+5. The app writes encrypted cloud configuration data to characteristic BLE_CLOUD_CREDENTIAL_CONFIG_UUID  `00000003-0000-1000-8000-00805f9b34fb`
 6. The ESP32 decrypts the data using the session key
 7. The ESP32 saves the data
 8. The ESP32 notifies success on BLE_CLOUD_CREDENTIAL_CONFIG_NOTIFY_UUID `00000009-0000-1000-8000-00805f9b34fb`
