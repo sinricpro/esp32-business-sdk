@@ -102,7 +102,7 @@ The app connects to the ESP32 and requests MTU size 512 (default is 23).
 
 ### 8. Enter product details and configure.
 
-1. The user enters the product details.  name, and description etc..
+1. The user enters the product details.  name, description etc..
 2. The user clicks save.
 3. The app creates the devices on the server.
 4. The app encrypts credentials/device IDs using the session key.
@@ -117,3 +117,4 @@ The app connects to the ESP32 and requests MTU size 512 (default is 23).
 1. Default NimBLE stack size is not large enough to cater to MBedLTS so the session key generation is running on a separate RTOS task.
 2. Due to limitations in iPhone 8 max MTU size is 185. ESP32 writes in 180-byte chunks (the rest is for overhead) when applicable. ESP32 writes the size first then followed by data in chunks. The app resembles the data.
 3. AES CTRX is used for encryption/decryption when applicable.
+4. Two characteristics are used for communication. request/notify. This helps to mimic the async nature and write timeouts errors
