@@ -69,8 +69,9 @@ The app connects to the ESP32 and requests MTU size 512 (default is 23).
 
 `{ "retailItemId": "xxxx", "version": "1" }`
 
-retailItemId = The product ID from the business portal.
-version = Is the provisioning protocol version. Right now it's set to 1
+`retailItemId` = The product ID from the business portal.
+`version` = Is the provisioning protocol version. Right now it's set to 1
+
 
 3. The app loads the product details from the server and shows the product details to the user. The user clicks `Continue` in the app.
 
@@ -84,8 +85,13 @@ version = Is the provisioning protocol version. Right now it's set to 1
 6. The ESP32 notifies the encrypted session key on BLE characteristic BLE_KEY_EXCHANGE_NOTIFY_UUID `00000010-0000-1000-8000-00805f9b34fb`
 7. The app decodes base64 and decrypts the session key using the private key (in step 1)
 
+### 4. List WIFI.
 
-### 4. WIFI.
+1. The app requests for list of WiFi networks that ESP32 can connect to via characteristic BLE_WIFI_LIST_UUID `00000005-0000-1000-8000-00805f9b34fb`
+2. The ESP32 scans for WiFi networks.
+3. The ESP32 notifies list of WiFi networks via characteristic BLE_WIFI_LIST_NOTIFY_UUID `00000006-0000-1000-8000-00805f9b34fb`
+
+### 4. WIFI Connect.
 
 1. The user inputs WIFI credentials and clicks configure.
 2. The app encrypts the WiFi credentials using the session key
@@ -109,4 +115,5 @@ version = Is the provisioning protocol version. Right now it's set to 1
 
 ##### Notes: 
 1. Default NimBLE stack size is not large enough to cater to MBedLTS so the session key generation is running on a separate RTOS task
-2. Due to limitations in iPhone 8 max MTU size is 185. ESP32 writes in 180-byte chunks (the rest is for overhead). ESP32 writes the size first then followed by data in chunks. The app resembles the data
+2. Due to limitations in iPhone 8 max MTU size is 185. ESP32 writes in 180-byte chunks (the rest is for overhead). ESP32 writes the size first then followed by data in chunks. The app resembles the data.
+3. 
