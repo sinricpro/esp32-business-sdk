@@ -56,11 +56,11 @@ The app scans for nearby Bluetooth devices for 15 seconds starting with the name
 
 ##### 3. Connect to ESP32.
 
-The app connects to the ESP32 and requests MTU size 512. 
+The app connects to the ESP32 and requests MTU size 512 (default is 23). 
 
 ##### 3. App request provisioning information. 
 
-1. The app writes to characteristics BLE_PROV_INFO_UUID `00000007-0000-1000-8000-00805f9b34fb`.  
+1. The app writes to characteristics BLE_PROV_INFO_UUID `00000007-0000-1000-8000-00805f9b34fb` to get the product details.  
 
 2. The ESP32 notifies the app with the below payload on characteristics BLE_INFO_NOTIFY_UUID `00000008-0000-1000-8000-00805f9b34fb`
 
