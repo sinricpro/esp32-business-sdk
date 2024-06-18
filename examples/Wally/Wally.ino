@@ -11,11 +11,6 @@
 
 #include <Arduino.h>
 
-#if defined(ARDUINO_ARCH_ESP32) || defined(ESP32) 
-#else
-#error "Architecture not supported!"
-#endif
-
 #define PRODUCT_ID          "66345255d495a7cbfa78445f"  // Product ID from Buiness Portal.
 #define FIRMWARE_VERSION    "1.1.1"                     // Your firmware version. Must be above SinricPro.h!
 
