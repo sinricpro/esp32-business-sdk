@@ -5,9 +5,11 @@
  *  This file is part of the Sinric Pro ESP32 Business SDK (https://github.com/sinricpro/esp32-business-sdk)
  */
 
-// TODO: Save to NVS
-
 #pragma once 
+
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ESP8266_ESP01) 
+#error "Architecture not supported!"
+#endif
 
 #include <ArduinoJson.h>
 #include <Preferences.h>
