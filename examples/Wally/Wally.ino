@@ -102,7 +102,7 @@ bool handleProvisioning() {
     });
 
     prov.onCloudCredentials([](const String &config) -> bool {
-      DynamicJsonDocument jsonConfig(2048);
+      JsonDocument jsonConfig;
       DeserializationError error = deserializeJson(jsonConfig, config);
       
       if (error) {

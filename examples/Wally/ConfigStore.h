@@ -53,7 +53,7 @@ bool ConfigStore::loadConfig() {
     return false;
   }
 
-  DynamicJsonDocument doc(2048);
+  JsonDocument doc;
   DeserializationError err = deserializeJson(doc, configFile);
 
   if (err) {
