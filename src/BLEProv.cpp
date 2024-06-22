@@ -20,11 +20,11 @@ BLEProvClass::BLEProvClass()
   m_uuidWiFiConfigNotify(BLE_WIFI_CONFIG_NOTIFY_UUID),
   m_uuidKeyExchange(BLE_KEY_EXCHANGE_UUID),
   m_uuidKeyExchangeNotify(BLE_KEY_EXCHANGE_NOTIFY_UUID),
-  m_uuidCloudCredentialConfig(BLE_AUTH_CONFIG_UUID),  
-  m_uuidCloudCredentialConfigNotify(BLE_AUTH_CONFIG_NOTIFY_UUID),
+  m_uuidCloudCredentialConfig(BLE_CLOUD_CREDENTIAL_CONFIG_UUID),  
+  m_uuidCloudCredentialConfigNotify(BLE_CLOUD_CREDENTIAL_CONFIG_NOTIFY_UUID),
   m_uuidWiFiList(BLE_WIFI_LIST_UUID),
   m_uuidWiFiListNotify(BLE_WIFI_LIST_NOTIFY_UUID),
-  m_uuidProvInfo(BLE_INFO_UUID),
+  m_uuidProvInfo(BLE_PROV_INFO_UUID),
   m_uuidProvInfoNotify(BLE_INFO_NOTIFY_UUID){}
 
 /**
@@ -170,7 +170,7 @@ void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredenti
          bool success = m_CloudCredentialsCallbackHandler(String(authConfig.c_str())); 
          std::string jsonString;
          
-         StaticJsonDocument<24> doc;
+         JsonDocument doc;
          doc["success"] = success ? true : false;
          serializeJsonPretty(doc, jsonString); 
          DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Response: %s\r\n"), jsonString.c_str());    
@@ -191,7 +191,7 @@ void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredenti
           DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Auth callback not defined!\r\n"));  
           
           std::string jsonString;
-          StaticJsonDocument<200> doc;
+          JsonDocument doc;
           doc[F("success")] = false;
           doc[F("message")] = F("Failed set authentication (nocallback)..");
           serializeJsonPretty(doc, jsonString);
@@ -220,14 +220,14 @@ void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharact
      std::string jsonString = "";
      
      if(success) {
-        StaticJsonDocument<200> doc;
+        JsonDocument doc;
         doc[F("success")] = true;
         doc[F("message")] = F("Success!");
         doc[F("bssid")] = WiFi.macAddress();
         doc[F("ip")] = WiFi.localIP().toString();
         serializeJsonPretty(doc, jsonString); 
      } else {
-        StaticJsonDocument<200> doc;
+        JsonDocument doc;
         doc[F("success")] = false;
         doc[F("message")] = F("Failed to connect to WiFi. Is password correct?");
         serializeJsonPretty(doc, jsonString);
@@ -243,7 +243,7 @@ void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharact
       DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()] m_WiFiCredentialsCallbackHandler not set!\r\n"));    
       
       std::string jsonString;
-      StaticJsonDocument<200> doc;
+      JsonDocument doc;
       doc[F("success")] = false;
       doc[F("message")] = F("Wifi Credentials Callback not set!..");
       serializeJsonPretty(doc, jsonString);
@@ -323,7 +323,7 @@ void BLEProvClass::handleProvInfo(NimBLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleProvInfo()] Start!\r\n"));  
 
   std::string jsonString;
-  StaticJsonDocument<200> doc;
+  JsonDocument doc;
   doc[F("retailItemId")] = m_retailItemId;
   doc[F("version")] = BLE_PROV_VERSION;
        

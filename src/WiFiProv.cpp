@@ -105,7 +105,7 @@ void WiFiProv::onCloudCredentials(CloudCredentialsCallback cb) {
 bool WiFiProv::onBleWiFiCredetials(String wifiConfig) {
   bool success = false;
  
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, wifiConfig);
   if (error) {
       DEBUG_PROV(PSTR("[WiFiProv.onBleWiFiCredetials()] deserializeJson() failed: %s"), error.c_str());
