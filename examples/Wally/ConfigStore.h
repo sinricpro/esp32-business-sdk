@@ -13,14 +13,17 @@
 
 #include <ArduinoJson.h>
 #include <Preferences.h>
-#include "SPIFFS.h"
+#include "LittleFS.h"
 
 struct DeviceConfig {
   char appKey[38];
   char appSecret[76];
-  char sw1_id[26];
-  char sw2_id[26];
+  
+  char switch_1[26];
+  char switch_2[26];
+  
 };
+
 
 class ConfigStore {
   public:
@@ -47,7 +50,7 @@ ConfigStore::~ConfigStore(){ }
 bool ConfigStore::loadConfig() {
   Serial.printf("[ConfigStore.loadConfig()] Loading config...\r\n");
   
-  File configFile = SPIFFS.open(PRODUCT_CONFIG_FILE, "r");
+  File configFile = LittleFS.open(PRODUCT_CONFIG_FILE, "r");
   if (!configFile) {
     Serial.printf("[ConfigStore.loadConfig()]: Config file does not exists! New device?\r\n");
     return false;
@@ -78,8 +81,9 @@ bool ConfigStore::loadConfig() {
     
   strlcpy(config.appKey, doc[F("credentials")][F("appkey")] | "", sizeof(config.appKey));
   strlcpy(config.appSecret, doc[F("credentials")][F("appsecret")] | "", sizeof(config.appSecret));
-  strlcpy(config.sw1_id, doc[F("devices")][0][F("id")] | "", sizeof(config.sw1_id));
-  strlcpy(config.sw2_id, doc[F("devices")][1][F("id")] | "", sizeof(config.sw2_id));  
+  strlcpy(config.switch_1, doc[F("devices")][0][F("id")] | "", sizeof(config.switch_1));
+  strlcpy(config.switch_2, doc[F("devices")][1][F("id")] | "", sizeof(config.switch_2));
+
     
   Serial.printf("success!\r\n");
   doc.clear();
@@ -106,12 +110,12 @@ bool ConfigStore::saveJsonConfig(const JsonDocument &doc){
   Serial.printf("[ConfigStore.saveJsonConfig()]: config: \r\n"); 
   serializeJsonPretty(doc, Serial);
 
-  if(SPIFFS.exists(PRODUCT_CONFIG_FILE)) {
+  if(LittleFS.exists(PRODUCT_CONFIG_FILE)) {
     Serial.printf("[ConfigStore.saveJsonConfig()]: Removing existing config file..\r\n"); 
-    SPIFFS.remove(PRODUCT_CONFIG_FILE);
+    LittleFS.remove(PRODUCT_CONFIG_FILE);
   }
 
-  File configFile = SPIFFS.open(PRODUCT_CONFIG_FILE, "w");
+  File configFile = LittleFS.open(PRODUCT_CONFIG_FILE, "w");
 
   if (!configFile) {
     Serial.printf("[ConfigStore.saveJsonConfig] Open config file failed!!!\r\n"); 
@@ -128,9 +132,9 @@ bool ConfigStore::saveJsonConfig(const JsonDocument &doc){
   
   strlcpy(config.appKey, appKey.c_str(), sizeof(config.appKey));
   strlcpy(config.appSecret, appSecret.c_str(), sizeof(config.appSecret));
-  strlcpy(config.sw1_id, doc[F("devices")][0][F("id")] | "", sizeof(config.sw1_id));
-  strlcpy(config.sw2_id, doc[F("devices")][1][F("id")] | "", sizeof(config.sw2_id));
-    
+  strlcpy(config.switch_1, doc[F("devices")][0][F("id")] | "", sizeof(config.switch_1));
+  strlcpy(config.switch_2, doc[F("devices")][1][F("id")] | "", sizeof(config.switch_2));
+
   Serial.printf("[ConfigStore.saveJsonConfig()]: success!\r\n"); 
   
   return true;
@@ -144,14 +148,14 @@ bool ConfigStore::saveJsonConfig(const JsonDocument &doc){
 bool ConfigStore::clear(){
   Serial.printf("[ConfigStore.clear()]: Clear config..."); 
    
-  SPIFFS.begin();
-  SPIFFS.remove(PRODUCT_CONFIG_FILE);
-  SPIFFS.end();
+  LittleFS.begin();
+  LittleFS.remove(PRODUCT_CONFIG_FILE);
+  LittleFS.end();
 
   memset(config.appKey, 0, sizeof(config.appKey));
   memset(config.appSecret, 0, sizeof(config.appSecret));
-  memset(config.sw1_id, 0, sizeof(config.sw1_id));
-  memset(config.sw2_id, 0, sizeof(config.sw2_id));
+  memset(config.switch_1, 0, sizeof(config.switch_1));
+  memset(config.switch_2, 0, sizeof(config.switch_2));
  
   Serial.printf("Done...\r\n"); 
   return true;

@@ -50,12 +50,12 @@ bool WiFiProv::hasProvisioned() {
  */
 bool WiFiProv::beginProvision() {
   if(!m_wifiCredentialsCallback) {
-    DEBUG_PROV(PSTR("[WiFiProv.beginProvision()] WiFi credential callback not set! Cannot continue!!"));
+    DEBUG_PROV(PSTR("[WiFiProv.beginProvision()]: WiFi credential callback not set! Cannot continue!!"));
     return false;
   }
 
   if(!m_cloudCredentialsCallback) {
-    DEBUG_PROV(PSTR("[WiFiProv.beginProvision()] Cloud credential callback not set! Cannot continue!!"));
+    DEBUG_PROV(PSTR("[WiFiProv.beginProvision()]: Cloud credential callback not set! Cannot continue!!"));
     return false;
   }  
 
@@ -66,7 +66,7 @@ bool WiFiProv::beginProvision() {
       DEBUG_PROV(PSTR("[WiFiProv.beginProvision()]: Provisioing failed!...\r\n"));
     }
   } else {
-    DEBUG_PROV(PSTR("[WiFiProv.beginProvision()] Already provisioned!"));
+    DEBUG_PROV(PSTR("[WiFiProv.beginProvision()]: Already provisioned!"));
   }
 
   return m_isConfigured;
@@ -83,7 +83,7 @@ WiFiProv::~WiFiProv(){}
 *      ok
 */ 
 bool WiFiProv::onBleCloudCredetials(const String &config) {
-  DEBUG_PROV(PSTR("[WiFiProv.onAuthCredetials()]: json: %s\r\n"), config.c_str());  
+  DEBUG_PROV(PSTR("[WiFiProv.onAuthCredetials()]: JSON: %s\r\n"), config.c_str());  
   return m_cloudCredentialsCallback(config);
 }
 
@@ -108,7 +108,7 @@ bool WiFiProv::onBleWiFiCredetials(String wifiConfig) {
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, wifiConfig);
   if (error) {
-      DEBUG_PROV(PSTR("[WiFiProv.onBleWiFiCredetials()] deserializeJson() failed: %s"), error.c_str());
+      DEBUG_PROV(PSTR("[WiFiProv.onBleWiFiCredetials()]: deserializeJson() failed: %s"), error.c_str());
       return false;
   }
 

@@ -36,6 +36,16 @@ private:
     mbedtls_entropy_context m_entropy_context;
     mbedtls_pk_context m_pk_context;
 
+    bool parsePublicKey(const std::string& public_key_pem);
+    bool generateSessionKey(unsigned char* session_key);
+    bool encryptSessionKey(const unsigned char* session_key, std::vector<uint8_t>& encrypted_key);
+    void prepareAesKeyAndIv(const unsigned char* session_key);
+    void encodeSessionKey(const std::vector<uint8_t>& encrypted_key, std::string& data);
+
+    bool performCryption(mbedtls_aes_context &ctx, std::vector<uint8_t> &iv, std::vector<uint8_t> &data, bool isEncrypt);
+    bool setupAesContext(mbedtls_aes_context &ctx, const std::vector<uint8_t> &key, bool isEncrypt);
+    bool isAesInitialized();
+    bool aesCTRXcryptBase(const std::vector<uint8_t> &key, std::vector<uint8_t> &iv, std::vector<uint8_t> &data, bool isEncrypt);
 public:
     CryptoMbedTLS();
     ~CryptoMbedTLS();

@@ -4,15 +4,19 @@
  *
  *  This file is part of the Sinric Pro ESP32 Business SDK (https://github.com/sinricpro/esp32-business-sdk)
  */
+
+//  ~~ SUPPORTS ESP32 ONLY ~~
+// THIS IS AN EXAMPLE FOR TWO CHANNEL RELAY PRODUCT
  
 // Notes:
 //  Change Tools -> Flash Size -> Minimun SPIFF
 //  To enable ESP32 logs: Tools -> Core Debug Level -> Verbose
+//  Install NimBLE, ArduinoJson (v7)  from library manager.
 
 #include <Arduino.h>
 
-#define PRODUCT_ID          "66345255d495a7cbfa78445f"  // Product ID from Buiness Portal.
-#define FIRMWARE_VERSION    "1.1.1"                     // Your firmware version. Must be above SinricPro.h!
+#define PRODUCT_ID          ""  // Product ID from Buiness Portal.
+#define FIRMWARE_VERSION    "1.1.1"       // Your firmware version. Must be above SinricPro.h!
 
 #define ENABLE_DEBUG // Enable Logs.
 
@@ -27,160 +31,104 @@
 #include <SinricProBusinessSdk.h>
 
 #include "ConfigStore.h"
-#include "WiFiUtil.h"
+#include "WiFiManager.h"
+#include "WiFiProvisioningManager.h"
 
-#include <SinricPro.h>
-#include <SinricProSwitch.h>
+#include "SinricPro.h"
+#include "SinricProSwitch.h"
  
 DeviceConfig m_config;
 ConfigStore m_configStore(m_config);
-unsigned long time_now = 0;
+WiFiProvisioningManager provisioningManager(m_configStore);
  
 bool onPowerState(const String &deviceId, bool &state) {
-  Serial.printf("[main.onPowerState()]: Device: %s, power state changed to %s\r\n", deviceId.c_str(), state ? "on" : "off");  
-   if(strcmp(m_config.sw1_id, deviceId.c_str()) == 0) { // is for switch 1 ?
-    Serial.printf("[main.onPowerState()]: Change devie device: %s, power state changed to %s\r\n", deviceId.c_str(), state ? "on" : "off");      
-  } else if(strcmp(m_config.sw2_id, deviceId.c_str()) == 0) { // is for switch 2 ?
-    Serial.printf("[main.onPowerState()]: Change devie device: %s, power state changed to %s\r\n", deviceId.c_str(), state ? "on" : "off");      
-  } else {
-    Serial.printf("[main.onPowerState()]: Devie device: %s not found!\r\n", deviceId.c_str());  
-  }
-  return true; // request handled properly
-}
+    if(strcmp(m_config.switch_1, deviceId.c_str()) == 0) { // is for switch 1 ?
+      Serial.printf("[main.onPowerState()]: Change devie device: %s, power state changed to %s\r\n", deviceId.c_str(), state ? "on" : "off");      
+    } else if(strcmp(m_config.switch_2, deviceId.c_str()) == 0) { // is for switch 2 ?
+      Serial.printf("[main.onPowerState()]: Change devie device: %s, power state changed to %s\r\n", deviceId.c_str(), state ? "on" : "off");      
+    } else {
+      Serial.printf("[main.onPowerState()]: Devie device: %s not found!\r\n", deviceId.c_str());  
+    }
 
-bool onSetSetting(const String &deviceId, const String& settingId, const String& settingValue) {
-  Serial.printf("[main.onSetSetting()]: Device: %s, id: %s, value: %s\r\n", deviceId.c_str(), settingId.c_str(), settingValue.c_str());
-  return true; // request handled properly
+    return true; // request handled properly
 }
-
 
 /**
- * Setup devices.
+ * @brief Setup devices.
  */
 void setupSinricPro() {
   Serial.printf("[setupSinricPro()]: Setup SinricPro.\r\n");  
-  SinricProSwitch& mySwitch1 = SinricPro[m_config.sw1_id];
+    
+  SinricProSwitch &mySwitch1 = SinricPro[m_config.switch_1];
   mySwitch1.onPowerState(onPowerState);
-  mySwitch1.onSetSetting(onSetSetting);
-  
-  SinricProSwitch& mySwitch2 = SinricPro[m_config.sw2_id];
+
+  SinricProSwitch &mySwitch2 = SinricPro[m_config.switch_2];
   mySwitch2.onPowerState(onPowerState);
-  mySwitch2.onSetSetting(onSetSetting);
-   
-  SinricPro.onConnected([]() { Serial.printf("[main.setupSinricPro()]: Connected to SinricPro\r\n"); });
-  SinricPro.onDisconnected([]() { Serial.printf("[main.setupSinricPro()]: Disconnected from SinricPro\r\n"); });
+    
+  SinricPro.onConnected([]() { Serial.printf("[setupSinricPro()]: Connected to SinricPro\r\n"); });
+  SinricPro.onDisconnected([]() { Serial.printf("[setupSinricPro()]: Disconnected from SinricPro\r\n"); });
   SinricPro.begin(m_config.appKey, m_config.appSecret);
 }
 
 /**
- * Setup PINs for devices.
+ * @brief Setup GPIO pins for your devices.
  */
 void setupPins() {
   Serial.printf("[setupPins()]: Setup pin definition.\r\n"); 
 }
 
-void handleLedIndicator(int state) {
-  // switch (state) {
-  //   case IDLE:
-  //   case WAIT_WIFI_CONFIG:
-  //   case WAIT_CLOUD_CONFIG:
-  //   case CONNECTING_WIFI:
-  //   case SUCCESS:  
-  //   case TIMEOUT:
-  //   case ERROR:
-  //     break;
-  // }
+/**
+ * @brief Setup LittleFS file system.
+ */
+void setupLittleFS() {
+  if (LittleFS.begin(true)) {
+    Serial.printf("[setupLittleFS()]: done.\r\n");
+  } else {
+    Serial.printf("[setupLittleFS()]: fail.\r\n");
+  }
 }
 
-void handleButton(int state) { }
-
-bool handleProvisioning() {
-   WiFiProv prov(PRODUCT_ID);    
-    
-    prov.onWiFiCredentials([](const char* ssid, const char* password) -> bool {
-      return WiFiUtil::connectToWiFi(ssid, password);
-    });
-
-    prov.onCloudCredentials([](const String &config) -> bool {
-      JsonDocument jsonConfig;
-      DeserializationError error = deserializeJson(jsonConfig, config);
+/**
+ * @brief Load device configuration. If not provisioned, begin provisioning.
+ */
+void loadConfigAndSetupWiFi() {
+  if (m_configStore.loadConfig()) {
+      Serial.printf("[loadConfigAndSetupWiFi()]: Connecting to WiFi...\r\n");
       
-      if (error) {
-        Serial.printf("[handleProvisioning()]: deserializeJson() failed: %s\r\n", error.c_str());
-        return false;
-      } else {
-        if (m_configStore.saveJsonConfig(jsonConfig)) {
-          Serial.printf("[handleProvisioning()]: Configuration updated!\r\n");
-          return true;    
-        }
-        else {
-          Serial.printf("[handleProvisioning()]: Failed to save configuration !\r\n");
-          return false;
-        }
+      while (!WiFiManager::connectToWiFi()) { 
+          Serial.printf("[loadConfigAndSetupWiFi()]: Cannot connect to WiFi. Router down? Retrying in 1 minute.\r\n");
+          delay(60000);
+          Serial.printf("[loadConfigAndSetupWiFi()]: Attempting reconnection...\r\n");
       }
-    });
-
-    prov.loop([](int state) {
-      // You can use loop() to handle buttons press or blink a LED.
-      // handleLedIndicator(state);
-      // handleButton();      
-    });
-
-    return prov.beginProvision();
+  } else {
+      Serial.printf("[loadConfigAndSetupWiFi()]: Beginning provisioning...\r\n");    
+      if (!provisioningManager.beginProvision(PRODUCT_ID)) {
+          Serial.printf("[loadConfigAndSetupWiFi()]: Provisioning failed. Restarting device.\r\n");    
+          ESP.restart();
+      }
+  }
 }
 
 void setup() {
   Serial.begin(BAUDRATE); Serial.println();
   delay(1000);
  
-  Serial.printf("[setup()]: Firmware: %s, SinricPro SDK: %s, Business SDK:%s\r\n", FIRMWARE_VERSION, SINRICPRO_VERSION, BUSINESS_SDK_VERSION);   
-  Serial.printf("[setup()]: Initialize SPIFFS...\r\n");  
+  Serial.printf(PSTR("[setup()]: Firmware: %s, SinricPro SDK: %s, Business SDK:%s\r\n"), FIRMWARE_VERSION, SINRICPRO_VERSION, BUSINESS_SDK_VERSION);   
   
-  if (SPIFFS.begin(true)) {
-    Serial.printf("[setup()]: done.\r\n");
-  } else{
-    Serial.printf("[setup()]: fail.\r\n");
-  }
+  Serial.printf("[setup()]: Setup LittleFS...\r\n");  
+  setupLittleFS();
 
-  Serial.printf("[setup()]: Setup Pins\r\n");
+  Serial.printf("[setup()]: Setup GPIO Pins\r\n");
   setupPins();
 
-  delay(1000); 
-
-  bool isConfigured = m_configStore.loadConfig();
-  Serial.printf("[setup()]: Provisioned ? %s\r\n", isConfigured ? "YES" : "NO");
-
-  if(!isConfigured) {
-    Serial.printf("[setup()]: Begin provisioning!\r\n");    
-
-    if(!handleProvisioning()) {
-      Serial.printf(PSTR("[setup()]: Provisioning failed. Cannot continue!.\r\n"));    
-      ESP.restart();
-      return;
-    }
-  }
-  else {
-    // Connect to WiFi
-    while (!WiFiUtil::connectToWiFi()) { 
-        Serial.printf(PSTR("[setup()]: Cannot connect to WiFi any longer. WiFi Router down? Waiting 1 min to retry.\r\n"));
-        delay(60000);
-        Serial.printf(PSTR("[setup()]: Trying again..."));
-    }
-  }
+  Serial.printf("[setup()]: Setup config\r\n");
+  loadConfigAndSetupWiFi();
     
   Serial.printf("[setup()]: Setup SinricPro!\r\n");
   setupSinricPro();
- 
-  Serial.printf("[setup()]: Free Heap: %u\r\n", ESP.getFreeHeap());
-  time_now = millis();
 }
 
 void loop() {
   SinricPro.handle();
-  // Try to avoid calling delay() function!
-     
-  if(millis() > time_now + 1000){
-      time_now = millis();
-      Serial.printf("[loop]: Free Heap: %u\r\n", ESP.getFreeHeap()); 
-  }  
+  // Try to avoid calling delay() function! 
 }
