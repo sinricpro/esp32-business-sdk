@@ -33,7 +33,7 @@ BLEProvClass::BLEProvClass()
 void BLEProvClass::begin(const String &deviceName, const String &retailItemId) {
   if (m_begin) stop();
 
-  DEBUG_PROV(PSTR("[BLEProvClass.begin] Setup BLE endpoints ..\r\n"));
+  DEBUG_PROV(PSTR("[BLEProvClass.begin]: Setup BLE endpoints ..\r\n"));
   
   NimBLEDevice::init(deviceName.c_str());
   NimBLEDevice::setPower(ESP_PWR_LVL_P9);
@@ -94,7 +94,7 @@ void BLEProvClass::begin(const String &deviceName, const String &retailItemId) {
   m_pAdvertising->addServiceUUID(m_uuidService);
   m_pAdvertising->start(); 
 
-  DEBUG_PROV(PSTR("[BLEProvClass.begin] done!\r\n"));
+  DEBUG_PROV(PSTR("[BLEProvClass.begin]: done!\r\n"));
   m_retailItemId = retailItemId;  
   m_begin = true;
 }
@@ -103,7 +103,7 @@ void BLEProvClass::begin(const String &deviceName, const String &retailItemId) {
 * @brief Generate a session encryption key using public key.
 */
 void BLEProvClass::handleKeyExchange(const std::string& publicKey, NimBLECharacteristic* pCharacteristic) {
-  DEBUG_PROV(PSTR("[BLEProvClass.handleKeyExchange()] Start!\r\n"));
+  DEBUG_PROV(PSTR("[BLEProvClass.handleKeyExchange()]:: Start!\r\n"));
 
   struct KeyExchangeData {
     BLEProvClass* provClass;
@@ -112,7 +112,7 @@ void BLEProvClass::handleKeyExchange(const std::string& publicKey, NimBLECharact
 
   KeyExchangeData* data = (KeyExchangeData*)malloc(sizeof(KeyExchangeData));
   if (data == nullptr) {
-    DEBUG_PROV(PSTR("[BLEProvClass.handleKeyExchange()] ProvData allocation failed!\r\n"));
+    DEBUG_PROV(PSTR("[BLEProvClass.handleKeyExchange()]: ProvData allocation failed!\r\n"));
     return;
   }
 
@@ -130,7 +130,7 @@ void BLEProvClass::handleKeyExchange(const std::string& publicKey, NimBLECharact
 
     data->provClass->m_crypto.deinitMbedTLS();
 
-    DEBUG_PROV(PSTR("[BLEProvClass.handleKeyExchange()] Encrypted session key is: %s\r\n"), sessionKey.c_str());      
+    DEBUG_PROV(PSTR("[BLEProvClass.handleKeyExchange()]: Encrypted session key is: %s\r\n"), sessionKey.c_str());      
 
     data->provClass->splitWrite(data->provClass->m_provKeyExchangeNotify, sessionKey);
     
@@ -149,22 +149,22 @@ void BLEProvClass::handleKeyExchange(const std::string& publicKey, NimBLECharact
 void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredentialsConfigChuck, NimBLECharacteristic* pCharacteristic) {
   if(m_expectedAuthConfigPayloadSize == -1) {
       m_expectedAuthConfigPayloadSize = std::atoi(cloudCredentialsConfigChuck.c_str());
-      DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Expected config payload size: %d\r\n"), m_expectedAuthConfigPayloadSize);
+      DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()]: Expected config payload size: %d\r\n"), m_expectedAuthConfigPayloadSize);
   } else {
     // Append data chucks
     m_receivedCloudCredentialsConfig.append(cloudCredentialsConfigChuck);
-    DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] %d/%d\r\n"), m_receivedCloudCredentialsConfig.size(), m_expectedAuthConfigPayloadSize);
+    DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()]: %d/%d\r\n"), m_receivedCloudCredentialsConfig.size(), m_expectedAuthConfigPayloadSize);
     
     if(m_receivedCloudCredentialsConfig.size() == m_expectedAuthConfigPayloadSize) {
       m_expectedAuthConfigPayloadSize = -1;
-      DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Auth config payload receive completed\r\n")); 
+      DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()]: Auth config payload receive completed\r\n")); 
       
       if (m_CloudCredentialsCallbackHandler) {
          std::vector<uint8_t> decodedConfig = m_crypto.base64Decode(m_receivedCloudCredentialsConfig);
          m_crypto.aesCTRXdecrypt(m_crypto.key, m_crypto.iv, decodedConfig);
          std::string authConfig(decodedConfig.begin(), decodedConfig.end());    
     
-         DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Decrypted config: %s\r\n"), authConfig.c_str());  
+         DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()]: Decrypted config: %s\r\n"), authConfig.c_str());  
     
          // Calling callback to connect to WiFi      
          bool success = m_CloudCredentialsCallbackHandler(String(authConfig.c_str())); 
@@ -173,11 +173,11 @@ void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredenti
          JsonDocument doc;
          doc["success"] = success ? true : false;
          serializeJsonPretty(doc, jsonString); 
-         DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Response: %s\r\n"), jsonString.c_str());    
+         DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()]: Response: %s\r\n"), jsonString.c_str());    
     
          splitWrite(m_provCloudCredentialConfigNotify, jsonString);
 
-         DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Notified!\r\n"));    
+         DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()]: Notified!\r\n"));    
 
          // Wait until client gets the response before we wrap up.
          ProvUtil::wait(2000);
@@ -188,7 +188,7 @@ void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredenti
             m_BleProvDoneCallbackHandler();
          }
         } else {
-          DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()] Auth callback not defined!\r\n"));  
+          DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()]: Auth callback not defined!\r\n"));  
           
           std::string jsonString;
           JsonDocument doc;
@@ -206,14 +206,14 @@ void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredenti
 * @brief Called when mobile sends WiFi credentials.
 */
 void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharacteristic* pCharacteristic) {
-  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()] Start!\r\n"));  
+  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: Start!\r\n"));  
  
   if (m_WiFiCredentialsCallbackHandler) {
      std::vector<uint8_t> decoded = m_crypto.base64Decode(wificonfig);
      m_crypto.aesCTRXdecrypt(m_crypto.key, m_crypto.iv, decoded);
      std::string wiFi_config(decoded.begin(), decoded.end());
 
-     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()] Wi-Fi config: %s\r\n"), wiFi_config.c_str());  
+     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: Wi-Fi config: %s\r\n"), wiFi_config.c_str());  
      
      bool success = m_WiFiCredentialsCallbackHandler(String(wiFi_config.c_str())); 
 
@@ -233,14 +233,14 @@ void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharact
         serializeJsonPretty(doc, jsonString);
      }
 
-     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()] WiFi Config response size: %u\r\n"), jsonString.length());    
-     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()] WiFi Config response: %s\r\n"), jsonString.c_str());    
+     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: WiFi Config response size: %u\r\n"), jsonString.length());    
+     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: WiFi Config response: %s\r\n"), jsonString.c_str());    
       
      splitWrite(m_provWiFiConfigNotify, jsonString);
 
-     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()] Done!\r\n"));          
+     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: Done!\r\n"));          
     } else {
-      DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()] m_WiFiCredentialsCallbackHandler not set!\r\n"));    
+      DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: m_WiFiCredentialsCallbackHandler not set!\r\n"));    
       
       std::string jsonString;
       JsonDocument doc;
@@ -251,26 +251,26 @@ void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharact
       m_provWiFiConfigNotify->notify();
    }
 
-   DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()] End!\r\n"));   
+   DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: End!\r\n"));   
 }
 
 /**
 * @brief Called when mobile wants a list of WiFis ESP can connect to.
 */
 void BLEProvClass::handleWiFiList(NimBLECharacteristic* pCharacteristic) {
-  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] Start!\r\n"));  
+  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Start!\r\n"));  
 
-  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] Scanning networks..!\r\n")); 
+  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scanning networks..!\r\n")); 
   WiFi.scanNetworks(false);
   int ret = WiFi.scanComplete();
   while (ret == WIFI_SCAN_RUNNING) {
     ret = WiFi.scanComplete();
     delay(50);
   } 
-  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] Scanning completed..!\r\n")); 
+  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scanning completed..!\r\n")); 
 
   if (ret == WIFI_SCAN_FAILED) { 
-    DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] Scan failed!\r\n"));
+    DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scan failed!\r\n"));
   }
 
   String jsonString = "[";
@@ -281,14 +281,14 @@ void BLEProvClass::handleWiFiList(NimBLECharacteristic* pCharacteristic) {
   }
   jsonString += "]";
 
-  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] WiFi list: %s\r\n"), jsonString.c_str());
+  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: WiFi list: %s\r\n"), jsonString.c_str());
 
   // Free memory
   WiFi.scanDelete();
    
   splitWrite(m_provWiFiListNotify, std::string(jsonString.c_str()));      
       
-  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()] End!\r\n"));    
+  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: End!\r\n"));    
 }
 
 /**
@@ -307,7 +307,7 @@ void BLEProvClass::splitWrite(NimBLECharacteristic * pCharacteristic, const std:
 
   while (remainingLength > 0) {
     int bytesToSend = min(BLE_FRAGMENT_SIZE, remainingLength); // send in chunks bytes until all the bytes are sent
-    DEBUG_PROV(PSTR("[BLEProvClass.splitWrite()] Sending %u bytes!\r\n"), bytesToSend);    
+    DEBUG_PROV(PSTR("[BLEProvClass.splitWrite()]: Sending %u bytes!\r\n"), bytesToSend);    
     pCharacteristic->setValue((str + offset), bytesToSend);
     pCharacteristic->notify();
     delay(10);
@@ -320,7 +320,7 @@ void BLEProvClass::splitWrite(NimBLECharacteristic * pCharacteristic, const std:
 * @brief Called when mobile wants a information about this device.
 */
 void BLEProvClass::handleProvInfo(NimBLECharacteristic* pCharacteristic) {
-  DEBUG_PROV(PSTR("[BLEProvClass.handleProvInfo()] Start!\r\n"));  
+  DEBUG_PROV(PSTR("[BLEProvClass.handleProvInfo()]: Start!\r\n"));  
 
   std::string jsonString;
   JsonDocument doc;
@@ -329,15 +329,15 @@ void BLEProvClass::handleProvInfo(NimBLECharacteristic* pCharacteristic) {
        
   serializeJsonPretty(doc, jsonString);
 
-  DEBUG_PROV(PSTR("[BLEProvClass.handleProvInfo()] Write: %s\r\n"), jsonString.c_str());  
+  DEBUG_PROV(PSTR("[BLEProvClass.handleProvInfo()]: Write: %s\r\n"), jsonString.c_str());  
   
   splitWrite(m_provInfoNotify, jsonString); 
 
-  DEBUG_PROV(PSTR("[BLEProvClass.handleProvInfo()] End!\r\n"));    
+  DEBUG_PROV(PSTR("[BLEProvClass.handleProvInfo()]: End!\r\n"));    
 }
 
 void BLEProvClass::onWrite(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc) {
-  DEBUG_PROV(PSTR("[BLEProvClass.onWrite()] UUID: %s, Got: %s\r\n"), pCharacteristic->getUUID().toString().c_str(), pCharacteristic->getValue().c_str());
+  DEBUG_PROV(PSTR("[BLEProvClass.onWrite()]: UUID: %s, Got: %s\r\n"), pCharacteristic->getUUID().toString().c_str(), pCharacteristic->getValue().c_str());
   if (pCharacteristic == m_provKeyExchange && m_provKeyExchange->getDataLength()) { 
      handleKeyExchange(m_provKeyExchange->getValue(), pCharacteristic); 
   }        
@@ -353,7 +353,7 @@ void BLEProvClass::onWrite(NimBLECharacteristic* pCharacteristic, ble_gap_conn_d
   else if (pCharacteristic == m_provInfo) { 
     handleProvInfo(pCharacteristic);
   } else {
-    DEBUG_PROV(PSTR("[BLEProvClass.onWrite()] Characteristic not found!"));
+    DEBUG_PROV(PSTR("[BLEProvClass.onWrite()]: Characteristic not found!"));
   }     
 }
 

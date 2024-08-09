@@ -1,79 +1,125 @@
-/*
- *  Copyright (c) 2019 - 2024 Sinric. All rights reserved.
- *  Licensed under Creative Commons Attribution-Share Alike (CC BY-SA)
- *
- *  This file is part of the Sinric Pro ESP32 Business SDK (https://github.com/sinricpro/esp32-business-sdk)
- */
-
 #pragma once
 
+#include <Arduino.h>
 #include <WiFi.h>
+#include "FS.h"
+#include "LittleFS.h"
 
+/**
+ *  @brief Manages SinricPro using primary and secondary SSID configurations.
+ */
 class WiFiManager {
 public:
-  static bool connectToWiFi();
-  static bool connectToWiFi(const char* wifi_ssid, const char* wifi_password);
+  struct wifi_settings_t {
+    char primarySSID[32];        ///< Primary SSID of the WiFi network.
+    char primaryPassword[64];    ///< Primary password of the WiFi network.
+    char secondarySSID[32];      ///< Secondary SSID of the WiFi network.
+    char secondaryPassword[64];  ///< Secondary password of the WiFi network.
+  };
+
+  /**
+   * @brief Construct a new WiFiManager object with default WiFi settings.
+   * 
+   * @param configFileName File name for storing WiFi settings.
+   */
+  WiFiManager(const char* configFileName);
+
+  /**
+   * @brief Initializes the WiFi manager, loading settings from file or using defaults if loading fails.
+   */
+  void loadConfig();
+
+  /**
+   * @brief Updates the primary WiFi settings.
+   * 
+   * @param newSSID New primary SSID.
+   * @param newPassword New primary password.
+   */
+  bool updatePrimarySettings(const char* newSSID, const char* newPassword);
+
+  /**
+   * @brief Updates the secondary WiFi settings.
+   * 
+   * @param newSSID New secondary SSID.
+   * @param newPassword New secondary password.
+   */
+  bool updateSecondarySettings(const char* newSSID, const char* newPassword);
+
+  /**
+   * @brief Prints the current WiFi settings to the Serial console.
+   */
+  void printSettings() const;
+
+  /**
+   * @brief Checks if the provided SSID and password are valid.
+   * 
+   * @param ssid SSID to check.
+   * @param password Password to check.
+   * @return true if both SSID and password are valid, false otherwise.
+   */
+  bool isValidSetting(const char* ssid, const char* password) const;
+
+  /**
+   * @brief Returns WiFi settings.
+   */
+  const wifi_settings_t& getWiFiSettings() const;
+
+  /**
+   * @brief Connect to primary or secondary WiFi.
+   */
+  bool connectToWiFi();
+
+  /**
+   * @brief Connect to specific WiFi.
+   */
+  bool connectToWiFi(const char* wifi_ssid, const char* wifi_password);
+
+  bool setWiFiConfig(const String& localIP, const String& gateway, const String& subnet, const String& dns1, const String& dns2);
+
+private:
+  const char* defaultPrimarySSID;        ///< Default primary SSID.
+  const char* defaultPrimaryPassword;    ///< Default primary password.
+  const char* defaultSecondarySSID;      ///< Default secondary SSID.
+  const char* defaultSecondaryPassword;  ///< Default secondary password.
+  const char* configFileName;            ///< File name to store WiFi settings.
+
+  wifi_settings_t wifiSettings;
+
+  /**
+   * @brief Saves the current WiFi settings to a file.
+   */
+  bool saveToFile();
+
+  /**
+   * @brief Loads WiFi settings from a file.
+   * 
+   * @return true if loaded successfully, false otherwise.
+   */
+  bool loadFromFile();
+
+  /**
+   * @brief Saves the default WiFi settings to a file and updates the current settings.
+   */
+  void saveDefaultSettings();
+
+  /**
+   * @brief Validates the given SSID.
+   * 
+   * @param ssid SSID to validate.
+   * @return true if the SSID is valid, false otherwise.
+   */
+  bool validateSSID(const char* ssid) const;
+
+  /**
+   * @brief Validates the given password.
+   * 
+   * @param password Password to validate.
+   * @return true if the password is valid, false otherwise.
+   */
+  bool validatePassword(const char* password) const;
+
+  /**
+   * @brief Deletes all the stored WiFi settings.
+   */
+  void deleteAllSettings();
 };
-
-/**
- * @brief Connect to last connected WiFi
- * @retval true
- *      Success
- * @retval false
- *      Failure
- */
-bool WiFiManager::connectToWiFi() {
-  return connectToWiFi("", "");
-}
-
-/**
- * @brief Connect to WiFi with ssid, password. If not provided, use the last connected
- * @param wifi_ssid
- *      WiFi SSID
- * @param wifi_password
- *      WiFi Password
- * @retval true
- *      Success
- * @retval false
- *      Failure
- */
-bool WiFiManager::connectToWiFi(const char* wifi_ssid, const char* wifi_password) {
-#if defined(ESP32)
-#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0))
-  WiFi.setMinSecurity(WIFI_AUTH_WEP);  // https://github.com/espressif/arduino-esp32/blob/master/docs/source/troubleshooting.rst
-#endif
-#endif
-
-  if (strlen(wifi_ssid) > 0 && strlen(wifi_password) > 0) {
-    Serial.printf("[WiFiManager.connectToWiFi()]: Got SSID:%s, PWD: %s\r\n", wifi_ssid, wifi_password);
-    WiFi.persistent(true);
-    WiFi.begin(wifi_ssid, wifi_password);
-  } else {
-    Serial.printf("[WiFiManager.connectToWiFi()]: Connecting to WiFi...\r\n");
-    WiFi.begin();  // Use credentails stored in NVS
-  }
-
-  unsigned long startMillis = millis();
-
-  while (WiFi.status() != WL_CONNECTED || WiFi.localIP() == IPAddress(0, 0, 0, 0)) {
-    delay(100);
-    if ((millis() - startMillis) > 15000) {
-      //return after 15 seconds.
-      break;
-    }
-
-    Serial.printf(".");
-  }
-
-  Serial.printf("\r\n");
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.printf("[WiFiManager.connectToWiFi()]: WiFi connected.");
-    Serial.printf("IP: %s\r\n", WiFi.localIP().toString().c_str());
-    WiFi.setAutoReconnect(true);
-    return true;
-  } else {
-    Serial.printf("[WiFiManager.connectToWiFi()]: WiFi connection failed. Please reboot the device and try again!\r\n");
-    return false;
-  }
-}
