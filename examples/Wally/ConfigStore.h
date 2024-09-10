@@ -9,17 +9,23 @@
 
 #include <ArduinoJson.h>
 #include <Preferences.h>
-#include "LittleFS.h"
+#include "SPIFFS.h"
 
 /**
  * @struct DeviceConfig
  * @brief Holds the configuration data for the device.
+ * 
+ * If you need security, please save this to NVS
  */
 struct DeviceConfig {
   char appKey[38];     ///< Application key
   char appSecret[76];  ///< Application secret
-  char switch_1[26];   ///< ID for switch 1
-  char switch_2[26];   ///< ID for switch 2
+  
+  char switch_1_id[26];   ///< ID for switch 1
+  char switch_1_name[32]; ///< Name for switch 1
+
+  char switch_2_id[26];   ///< ID for switch 2
+  char switch_2_name[32]; ///< Name for switch 2
 };
 
 /**
@@ -70,7 +76,7 @@ ConfigStore::~ConfigStore() {}
 bool ConfigStore::loadConfig() {
   Serial.printf("[ConfigStore.loadConfig()] Loading config...\r\n");
 
-  File configFile = LittleFS.open(PRODUCT_CONFIG_FILE, "r");
+  File configFile = SPIFFS.open(PRODUCT_CONFIG_FILE, "r");
   if (!configFile) {
     Serial.printf("[ConfigStore.loadConfig()]: Config file does not exist! New device?\r\n");
     return false;
@@ -101,8 +107,12 @@ bool ConfigStore::loadConfig() {
   // Copy configuration data from JSON to config struct
   strlcpy(config.appKey, doc[F("credentials")][F("appkey")] | "", sizeof(config.appKey));
   strlcpy(config.appSecret, doc[F("credentials")][F("appsecret")] | "", sizeof(config.appSecret));
-  strlcpy(config.switch_1, doc[F("devices")][0][F("id")] | "", sizeof(config.switch_1));
-  strlcpy(config.switch_2, doc[F("devices")][1][F("id")] | "", sizeof(config.switch_2));
+
+  strlcpy(config.switch_1_id, doc[F("devices")][0][F("id")] | "", sizeof(config.switch_1_id));
+  strlcpy(config.switch_1_name, doc[F("devices")][0][F("name")] | "", sizeof(config.switch_1_name));
+
+  strlcpy(config.switch_2_id, doc[F("devices")][1][F("id")] | "", sizeof(config.switch_2_id));
+  strlcpy(config.switch_2_name, doc[F("devices")][1][F("name")] | "", sizeof(config.switch_2_name));
 
   Serial.printf("success!\r\n");
   doc.clear();
@@ -125,12 +135,12 @@ bool ConfigStore::saveJsonConfig(const JsonDocument &doc) {
   serializeJsonPretty(doc, Serial);
 
   // Remove existing config file if it exists
-  if (LittleFS.exists(PRODUCT_CONFIG_FILE)) {
+  if (SPIFFS.exists(PRODUCT_CONFIG_FILE)) {
     Serial.printf("[ConfigStore.saveJsonConfig()]: Removing existing config file..\r\n");
-    LittleFS.remove(PRODUCT_CONFIG_FILE);
+    SPIFFS.remove(PRODUCT_CONFIG_FILE);
   }
 
-  File configFile = LittleFS.open(PRODUCT_CONFIG_FILE, "w");
+  File configFile = SPIFFS.open(PRODUCT_CONFIG_FILE, FILE_WRITE);
 
   if (!configFile) {
     Serial.printf("[ConfigStore.saveJsonConfig] Open config file failed!!!\r\n");
@@ -148,8 +158,12 @@ bool ConfigStore::saveJsonConfig(const JsonDocument &doc) {
   // Update config struct with new values
   strlcpy(config.appKey, appKey.c_str(), sizeof(config.appKey));
   strlcpy(config.appSecret, appSecret.c_str(), sizeof(config.appSecret));
-  strlcpy(config.switch_1, doc[F("devices")][0][F("id")] | "", sizeof(config.switch_1));
-  strlcpy(config.switch_2, doc[F("devices")][1][F("id")] | "", sizeof(config.switch_2));
+  
+  strlcpy(config.switch_1_id, doc[F("devices")][0][F("id")] | "", sizeof(config.switch_1_id));
+  strlcpy(config.switch_1_name, doc[F("devices")][0][F("name")] | "", sizeof(config.switch_1_name));
+
+  strlcpy(config.switch_2_id, doc[F("devices")][1][F("id")] | "", sizeof(config.switch_2_id));
+  strlcpy(config.switch_2_name, doc[F("devices")][1][F("name")] | "", sizeof(config.switch_2_name));
 
   Serial.printf("[ConfigStore.saveJsonConfig()]: success!\r\n");
 
@@ -160,15 +174,19 @@ bool ConfigStore::clear() {
   Serial.printf("[ConfigStore.clear()]: Clear config...");
 
   // Remove config file from file system
-  LittleFS.begin();
-  LittleFS.remove(PRODUCT_CONFIG_FILE);
-  LittleFS.end();
+  SPIFFS.begin();
+  SPIFFS.remove(PRODUCT_CONFIG_FILE);
+  SPIFFS.end();
 
   // Clear config struct
   memset(config.appKey, 0, sizeof(config.appKey));
   memset(config.appSecret, 0, sizeof(config.appSecret));
-  memset(config.switch_1, 0, sizeof(config.switch_1));
-  memset(config.switch_2, 0, sizeof(config.switch_2));
+
+  memset(config.switch_1_id, 0, sizeof(config.switch_1_id));
+  memset(config.switch_2_name, 0, sizeof(config.switch_2_name));
+
+  memset(config.switch_2_id, 0, sizeof(config.switch_2_id));
+  memset(config.switch_2_name, 0, sizeof(config.switch_2_name));
 
   Serial.printf("Done...\r\n");
   return true;

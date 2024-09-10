@@ -261,16 +261,44 @@ void BLEProvClass::handleWiFiList(NimBLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Start!\r\n"));  
 
   DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scanning networks..!\r\n")); 
-  WiFi.scanNetworks(false);
-  int ret = WiFi.scanComplete();
-  while (ret == WIFI_SCAN_RUNNING) {
-    ret = WiFi.scanComplete();
-    delay(50);
-  } 
-  DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scanning completed..!\r\n")); 
+  
+  int scanAttempts = 0;
+  const int maxAttempts = 3;
+  int ret = 0;
 
-  if (ret == WIFI_SCAN_FAILED) { 
-    DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scan failed!\r\n"));
+  while (scanAttempts < maxAttempts) {
+    WiFi.scanNetworks(false);
+    ret = WiFi.scanComplete();
+    
+    while (ret == WIFI_SCAN_RUNNING) {
+      ret = WiFi.scanComplete();
+      delay(50);
+    }
+    
+    DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scanning completed..!\r\n"));
+    
+    if (ret == WIFI_SCAN_FAILED) {
+      DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scan failed!\r\n"));
+      scanAttempts++;
+      if (scanAttempts < maxAttempts) {
+        DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Resetting WiFi and retrying scan...\r\n"));
+        
+        // Reset WiFi
+        WiFi.mode(WIFI_OFF);   // Turn WiFi off
+        delay(500);            // Wait
+        WiFi.mode(WIFI_STA);   // Turn WiFi back on
+        delay(500);            // Wait for WiFi to initialize
+      }
+    } else {
+      // Scan was successful, break the loop
+      break;
+    }
+  }
+
+  if (scanAttempts == maxAttempts) {
+    DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: All scan attempts failed after WiFi resets!\r\n"));
+  } else {
+    DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scan successful!\r\n"));
   }
 
   String jsonString = "[";

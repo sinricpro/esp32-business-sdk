@@ -18,6 +18,9 @@
  * @note Install NimBLE, ArduinoJson (v7) from library manager.
  */
 
+#define PRODUCT_ID        ""      /* Product ID from Buiness Portal. */
+#define FIRMWARE_VERSION  "1.1.1" /* Your firmware version. Must be above SinricPro.h! */
+
 #include <Arduino.h>
 #include <SinricProBusinessSdk.h>
 
@@ -52,10 +55,10 @@ unsigned long m_lastHeartbeatMills = 0;
  * @return true if the request was handled properly
  */
 bool onPowerState(const String& deviceId, bool& state) {
-  if (strcmp(m_config.switch_1, deviceId.c_str()) == 0) {
+  if (strcmp(m_config.switch_1_id, deviceId.c_str()) == 0) {
     Serial.printf("[main.onPowerState()]: Change device: %s, power state changed to %s\r\n", deviceId.c_str(), state ? "on" : "off");
     // TODO: Implement the actual control of switch 1
-  } else if (strcmp(m_config.switch_2, deviceId.c_str()) == 0) {
+  } else if (strcmp(m_config.switch_2_id, deviceId.c_str()) == 0) {
     Serial.printf("[main.onPowerState()]: Change device: %s, power state changed to %s\r\n", deviceId.c_str(), state ? "on" : "off");
     // TODO: Implement the actual control of switch 2
   } else {
@@ -95,7 +98,7 @@ bool onSetModuleSetting(const String& id, const String& value) {
  * @return true if the update was successful
  */
 bool onOTAUpdate(const String& url, int major, int minor, int patch, bool forceUpdate) {
-  OtaUpdateResult result = m_otaManager.handleOTAUpdate(url, major, minor, patch, forceUpdate);
+  OtaUpdateResult result = m_otaManager.handleOTAUpdate(FIRMWARE_VERSION, url, major, minor, patch, forceUpdate);
   if (!result.success) {
     SinricPro.setResponseMessage(std::move(result.message));
   }
@@ -110,10 +113,10 @@ bool onOTAUpdate(const String& url, int major, int minor, int patch, bool forceU
 void setupSinricPro() {
   Serial.printf("[setupSinricPro()]: Setup SinricPro.\r\n");
 
-  SinricProSwitch& mySwitch1 = SinricPro[m_config.switch_1];
+  SinricProSwitch& mySwitch1 = SinricPro[m_config.switch_1_id];
   mySwitch1.onPowerState(onPowerState);
 
-  SinricProSwitch& mySwitch2 = SinricPro[m_config.switch_2];
+  SinricProSwitch& mySwitch2 = SinricPro[m_config.switch_2_id];
   mySwitch2.onPowerState(onPowerState);
 
   SinricPro.onConnected([]() {
@@ -149,16 +152,24 @@ void setupPins() {
 }
 
 /**
- * @brief Set up LittleFS file system
+ * @brief Set up SPIFFS file system
  * 
- * This function initializes the LittleFS file system.
+ * This function initializes the SPIFFS file system.
  */
-void setupLittleFS() {
-  if (LittleFS.begin(true)) {
-    Serial.printf("[setupLittleFS()]: done.\r\n");
+void setupSPIFFS() {
+
+  if (SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
+    Serial.printf("[setupSPIFFS()]: done.\r\n");
   } else {
-    Serial.printf("[setupLittleFS()]: fail.\r\n");
+    Serial.printf("[setupSPIFFS()]: fail.\r\n");
   }
+
+  // Serial.println("Erasing SPIFFS...");
+  // if (SPIFFS.format()) {
+  //   Serial.println("SPIFFS erased successfully.");
+  // } else {
+  //   Serial.println("Error erasing SPIFFS.");
+  // } 
 }
 
 /**
@@ -183,29 +194,37 @@ void handleNoHeartbeat() {
  */
 void loadConfigAndSetupWiFi() {
   Serial.printf("[loadConfigAndSetupWiFi()]: Loading config...\r\n");
-
+  
+  // Attempt to load the configuration
   if (m_configStore.loadConfig()) {
     Serial.printf("[loadConfigAndSetupWiFi()]: Connecting to WiFi...\r\n");
+    
+    // Load WiFi configuration
     m_wifiManager.loadConfig();
-
+    
+    // Set up timeout for WiFi connection attempts
     unsigned long startMillis = millis();
-    const int timeout = 1000 * 60 * 10;  // reset in 10 mins
-
+    const int timeout = 1000 * 60 * 10;  // 10 minutes timeout
+    
+    // Attempt to connect to WiFi
     while (!m_wifiManager.connectToWiFi()) {
       Serial.printf("[loadConfigAndSetupWiFi()]: Cannot connect to WiFi. Retry in 30 seconds!\r\n");
-      delay(30000);
+      delay(30000);  // Wait for 30 seconds before retrying
       Serial.printf("[loadConfigAndSetupWiFi()]: Attempting reconnection...\r\n");
-
+      
+      // Check if timeout has been reached
       if ((millis() - startMillis) > timeout) {
         Serial.printf("[loadConfigAndSetupWiFi()]: Connection retry timeout. Restarting ESP...\r\n");
-        ESP.restart();
+        ESP.restart();  // Restart the ESP if connection fails after timeout
       }
     }
   } else {
+    // If configuration couldn't be loaded, start provisioning process
     Serial.printf("[loadConfigAndSetupWiFi()]: Beginning provisioning...\r\n");
+    
     if (!m_provisioningManager.beginProvision(PRODUCT_ID)) {
       Serial.printf("[loadConfigAndSetupWiFi()]: Provisioning failed. Restarting device.\r\n");
-      ESP.restart();
+      ESP.restart();  // Restart the ESP if provisioning fails
     }
   }
 }
@@ -217,8 +236,8 @@ void setup() {
 
   Serial.printf(PSTR("[setup()]: Firmware: %s, SinricPro SDK: %s, Business SDK:%s\r\n"), FIRMWARE_VERSION, SINRICPRO_VERSION, BUSINESS_SDK_VERSION);
 
-  Serial.printf("[setup()]: Setup LittleFS...\r\n");
-  setupLittleFS();
+  Serial.printf("[setup()]: Setup SPIFFS...\r\n");
+  setupSPIFFS();
 
   Serial.printf("[setup()]: Setup GPIO Pins\r\n");
   setupPins();

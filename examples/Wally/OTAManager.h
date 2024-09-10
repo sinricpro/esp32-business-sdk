@@ -41,7 +41,7 @@ public:
      * @param forceUpdate If true, forces the update regardless of version.
      * @return OtaUpdateResult Struct containing the result of the update attempt.
      */
-    OtaUpdateResult handleOTAUpdate(const String &url, int major, int minor, int patch, bool forceUpdate);
+    OtaUpdateResult handleOTAUpdate(const String &firmwareVersion, const String &url, int major, int minor, int patch, bool forceUpdate);
 
 private:
     /**

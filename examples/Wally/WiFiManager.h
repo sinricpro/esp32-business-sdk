@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include "FS.h"
-#include "LittleFS.h"
+#include "SPIFFS.h"
 
 /**
  *  @brief Manages SinricPro using primary and secondary SSID configurations.
@@ -27,7 +27,7 @@ public:
   /**
    * @brief Initializes the WiFi manager, loading settings from file or using defaults if loading fails.
    */
-  void loadConfig();
+  bool loadConfig();
 
   /**
    * @brief Updates the primary WiFi settings.
@@ -77,13 +77,8 @@ public:
   bool setWiFiConfig(const String& localIP, const String& gateway, const String& subnet, const String& dns1, const String& dns2);
 
 private:
-  const char* defaultPrimarySSID;        ///< Default primary SSID.
-  const char* defaultPrimaryPassword;    ///< Default primary password.
-  const char* defaultSecondarySSID;      ///< Default secondary SSID.
-  const char* defaultSecondaryPassword;  ///< Default secondary password.
-  const char* configFileName;            ///< File name to store WiFi settings.
-
-  wifi_settings_t wifiSettings;
+  const char* m_configFileName;            ///< File name to store WiFi settings.
+  wifi_settings_t m_wifiSettings;          ///< WiFi settings.
 
   /**
    * @brief Saves the current WiFi settings to a file.
@@ -96,11 +91,6 @@ private:
    * @return true if loaded successfully, false otherwise.
    */
   bool loadFromFile();
-
-  /**
-   * @brief Saves the default WiFi settings to a file and updates the current settings.
-   */
-  void saveDefaultSettings();
 
   /**
    * @brief Validates the given SSID.

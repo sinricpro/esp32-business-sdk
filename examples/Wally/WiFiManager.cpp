@@ -8,21 +8,24 @@
 #include "WiFiManager.h"
 
 WiFiManager::WiFiManager(const char* configFileName)
-  : configFileName(configFileName) {
-  memset(&wifiSettings, 0, sizeof(wifiSettings));
+  : m_configFileName(configFileName) {
+  memset(&m_wifiSettings, 0, sizeof(m_wifiSettings));
 }
 
-void WiFiManager::loadConfig() {
-  if (!loadFromFile()) {
-    saveDefaultSettings();
-  }
-  printSettings();
+bool WiFiManager::loadConfig() {
+  if(loadFromFile()) {
+    printSettings();
+    return true;
+  } else {
+    Serial.println("Load WiFi config failed!");
+    return false;    
+  }  
 }
 
 bool WiFiManager::updatePrimarySettings(const char* newSSID, const char* newPassword) {
   if (isValidSetting(newSSID, newPassword)) {
-    strncpy(wifiSettings.primarySSID, newSSID, sizeof(wifiSettings.primarySSID));
-    strncpy(wifiSettings.primaryPassword, newPassword, sizeof(wifiSettings.primaryPassword));
+    strncpy(m_wifiSettings.primarySSID, newSSID, sizeof(m_wifiSettings.primarySSID));
+    strncpy(m_wifiSettings.primaryPassword, newPassword, sizeof(m_wifiSettings.primaryPassword));
     return saveToFile();
   } else {
     Serial.println("Invalid Primary SSID or Password");
@@ -32,8 +35,8 @@ bool WiFiManager::updatePrimarySettings(const char* newSSID, const char* newPass
 
 bool WiFiManager::updateSecondarySettings(const char* newSSID, const char* newPassword) {
   if (isValidSetting(newSSID, newPassword)) {
-    strncpy(wifiSettings.secondarySSID, newSSID, sizeof(wifiSettings.secondarySSID));
-    strncpy(wifiSettings.secondaryPassword, newPassword, sizeof(wifiSettings.secondaryPassword));
+    strncpy(m_wifiSettings.secondarySSID, newSSID, sizeof(m_wifiSettings.secondarySSID));
+    strncpy(m_wifiSettings.secondaryPassword, newPassword, sizeof(m_wifiSettings.secondaryPassword));    
     return saveToFile();
   } else {
     Serial.println("Invalid Secondary SSID or Password");
@@ -42,49 +45,39 @@ bool WiFiManager::updateSecondarySettings(const char* newSSID, const char* newPa
 }
 
 void WiFiManager::printSettings() const {
-  Serial.printf("Primary SSID: %s\n", wifiSettings.primarySSID);
-  Serial.printf("Primary Password: %s\n", wifiSettings.primaryPassword);
-  Serial.printf("Secondary SSID: %s\n", wifiSettings.secondarySSID);
-  Serial.printf("Secondary Password: %s\n", wifiSettings.secondaryPassword);
+  Serial.printf("Primary SSID: %s\n", m_wifiSettings.primarySSID);
+  Serial.printf("Primary Password: %s\n", m_wifiSettings.primaryPassword);
+  Serial.printf("Secondary SSID: %s\n", m_wifiSettings.secondarySSID);
+  Serial.printf("Secondary Password: %s\n", m_wifiSettings.secondaryPassword);
 }
 
 bool WiFiManager::saveToFile() {
-  File file = LittleFS.open(configFileName, FILE_WRITE);
+  File file = SPIFFS.open(m_configFileName, FILE_WRITE);
   if (file) {
-    file.write(reinterpret_cast<const uint8_t*>(&wifiSettings), sizeof(wifiSettings));
+    /* below line will throw an exception if the SPIFFS is not setup */
+    file.write(reinterpret_cast<const uint8_t*>(&m_wifiSettings), sizeof(m_wifiSettings));
     file.close();
     return true;
   } else {
-    Serial.printf("Failed to save WiFi\n");
+    Serial.printf("Failed to save WiFi config to: %s\n", m_configFileName);
     return false;
   }
 }
 
 bool WiFiManager::loadFromFile() {
-  File file = LittleFS.open(configFileName, FILE_READ);
-  if (file && file.size() == sizeof(wifiSettings)) {
-    file.read(reinterpret_cast<uint8_t*>(&wifiSettings), sizeof(wifiSettings));
+  File file = SPIFFS.open(m_configFileName, FILE_READ);
+  if (file && file.size() == sizeof(m_wifiSettings)) {
+    file.read(reinterpret_cast<uint8_t*>(&m_wifiSettings), sizeof(m_wifiSettings));
     file.close();
     return true;
   }
   return false;
 }
 
-void WiFiManager::saveDefaultSettings() {
-  Serial.println("Saving default WiFi login!");
-
-  strncpy(wifiSettings.primarySSID, defaultPrimarySSID, sizeof(wifiSettings.primarySSID));
-  strncpy(wifiSettings.primaryPassword, defaultPrimaryPassword, sizeof(wifiSettings.primaryPassword));
-  strncpy(wifiSettings.secondarySSID, defaultSecondarySSID, sizeof(wifiSettings.secondarySSID));
-  strncpy(wifiSettings.secondaryPassword, defaultSecondaryPassword, sizeof(wifiSettings.secondaryPassword));
-
-  saveToFile();
-}
-
 void WiFiManager::deleteAllSettings() {
-  memset(&wifiSettings, 0, sizeof(wifiSettings));
-  if (LittleFS.exists(configFileName)) {
-    LittleFS.remove(configFileName);
+  memset(&m_wifiSettings, 0, sizeof(m_wifiSettings));
+  if (SPIFFS.exists(m_configFileName)) {
+    SPIFFS.remove(m_configFileName);
   }
   Serial.println("All WiFi settings have been deleted.");
 }
@@ -136,7 +129,7 @@ bool WiFiManager::setWiFiConfig(const String& localIP, const String& gateway, co
 }
 
 const WiFiManager::wifi_settings_t& WiFiManager::getWiFiSettings() const {
-  return wifiSettings;
+  return m_wifiSettings;
 }
 
 bool WiFiManager::connectToWiFi() {
@@ -171,7 +164,6 @@ bool WiFiManager::connectToWiFi(const char* wifi_ssid, const char* wifi_password
   Serial.print("Connecting to ");
   Serial.println(wifi_ssid);
 
-  WiFi.persistent(true);
   WiFi.setSleep(false);
   WiFi.begin(wifi_ssid, wifi_password);
 

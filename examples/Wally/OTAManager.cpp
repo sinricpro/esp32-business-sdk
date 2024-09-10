@@ -8,9 +8,9 @@
 #include "OTAManager.h"
 #include "SemVer.h"
 
-OtaUpdateResult OTAManager::handleOTAUpdate(const String &url, int major, int minor, int patch, bool forceUpdate) {
+OtaUpdateResult OTAManager::handleOTAUpdate(const String &firmwareVersion, const String &url, int major, int minor, int patch, bool forceUpdate) {
     OtaUpdateResult result = { false, "" };
-    Version currentVersion = Version(FIRMWARE_VERSION);
+    Version currentVersion = Version(firmwareVersion);
     Version newVersion = Version(String(major) + "." + String(minor) + "." + String(patch));
     bool updateAvailable = newVersion > currentVersion;
 
