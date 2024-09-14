@@ -14,18 +14,7 @@ BLEProvClass::BLEProvClass()
 : m_begin(false)
 , m_WiFiCredentialsCallbackHandler(nullptr),
   m_CloudCredentialsCallbackHandler(nullptr),
-  m_receivedCloudCredentialsConfig(""),
-  m_uuidService(BLE_SERVICE_UUID),
-  m_uuidWiFiConfig(BLE_WIFI_CONFIG_UUID),
-  m_uuidWiFiConfigNotify(BLE_WIFI_CONFIG_NOTIFY_UUID),
-  m_uuidKeyExchange(BLE_KEY_EXCHANGE_UUID),
-  m_uuidKeyExchangeNotify(BLE_KEY_EXCHANGE_NOTIFY_UUID),
-  m_uuidCloudCredentialConfig(BLE_CLOUD_CREDENTIAL_CONFIG_UUID),  
-  m_uuidCloudCredentialConfigNotify(BLE_CLOUD_CREDENTIAL_CONFIG_NOTIFY_UUID),
-  m_uuidWiFiList(BLE_WIFI_LIST_UUID),
-  m_uuidWiFiListNotify(BLE_WIFI_LIST_NOTIFY_UUID),
-  m_uuidProvInfo(BLE_PROV_INFO_UUID),
-  m_uuidProvInfoNotify(BLE_INFO_NOTIFY_UUID){}
+  m_receivedCloudCredentialsConfig(""){}
 
 /**
 * @brief Setup BLE provisioning endpoints 
@@ -35,63 +24,57 @@ void BLEProvClass::begin(const String &deviceName, const String &retailItemId) {
 
   DEBUG_PROV(PSTR("[BLEProvClass.begin]: Setup BLE endpoints ..\r\n"));
   
-  NimBLEDevice::init(deviceName.c_str());
-  NimBLEDevice::setPower(ESP_PWR_LVL_P9);
-  NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY); 
-  NimBLEDevice::setMTU(512);
+  BLEDevice::init(deviceName.c_str());
+  BLEDevice::setPower(ESP_PWR_LVL_P9);
+  BLEDevice::setMTU(512);
    
-  m_pServer = NimBLEDevice::createServer();
+  m_pServer = BLEDevice::createServer();
   m_pServer->setCallbacks(this);
-  m_pServer->advertiseOnDisconnect(false);
 
-  m_pService = m_pServer->createService(m_uuidService);
+  m_pService = m_pServer->createService(BLE_SERVICE_UUID);
 
-  m_provWiFiConfig = m_pService->createCharacteristic(m_uuidWiFiConfig, NIMBLE_PROPERTY::WRITE_NR); 
-  m_provWiFiConfig->setValue("wifi_config");
-  m_provWiFiConfig->setCallbacks(this);
-
-  m_provWiFiConfigNotify = m_pService->createCharacteristic(m_uuidWiFiConfigNotify, NIMBLE_PROPERTY::NOTIFY); 
-  m_provWiFiConfigNotify->setValue("wifi_config_notify");
-  m_provWiFiConfigNotify->setCallbacks(this);
-
-  m_provKeyExchange = m_pService->createCharacteristic(m_uuidKeyExchange, NIMBLE_PROPERTY::WRITE_NR); 
-  m_provKeyExchange->setValue("key_exchange");
-  m_provKeyExchange->setCallbacks(this); 
-
-  m_provKeyExchangeNotify = m_pService->createCharacteristic(m_uuidKeyExchangeNotify, NIMBLE_PROPERTY::NOTIFY); 
-  m_provKeyExchangeNotify->setValue("key_exchange_notify");
-  m_provKeyExchangeNotify->setCallbacks(this); 
-
-  m_provCloudCredentialConfig = m_pService->createCharacteristic(m_uuidCloudCredentialConfig, NIMBLE_PROPERTY::WRITE); 
-  m_provCloudCredentialConfig->setValue("cloud_credential_config");
-  m_provCloudCredentialConfig->setCallbacks(this); 
-
-  m_provCloudCredentialConfigNotify = m_pService->createCharacteristic(m_uuidCloudCredentialConfigNotify, NIMBLE_PROPERTY::NOTIFY); 
-  m_provCloudCredentialConfigNotify->setValue("cloud_credential_config_notify");
-  m_provCloudCredentialConfigNotify->setCallbacks(this);
-
-  m_provWiFiList = m_pService->createCharacteristic(m_uuidWiFiList, NIMBLE_PROPERTY::WRITE_NR); 
-  m_provWiFiList->setValue("wifi_list");
-  m_provWiFiList->setCallbacks(this); 
-
-  m_provWiFiListNotify = m_pService->createCharacteristic(m_uuidWiFiListNotify, NIMBLE_PROPERTY::NOTIFY); 
-  m_provWiFiListNotify->setValue("wifi_list_notify");
-  m_provWiFiListNotify->setCallbacks(this);
-
-  m_provInfo = m_pService->createCharacteristic(m_uuidProvInfo, NIMBLE_PROPERTY::WRITE_NR); 
-  m_provInfo->setValue("prov_info");
+  m_provInfo = m_pService->createCharacteristic(BLE_PROV_INFO_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE); 
   m_provInfo->setCallbacks(this); 
 
-  m_provInfoNotify = m_pService->createCharacteristic(m_uuidProvInfoNotify, NIMBLE_PROPERTY::NOTIFY); 
-  m_provInfoNotify->setValue("prov_info_notify");
+  m_provInfoNotify = m_pService->createCharacteristic(BLE_PROV_INFO_NOTIFY_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY); 
   m_provInfoNotify->setCallbacks(this);
+  m_provWiFiConfigNotify->addDescriptor(new BLE2902());
+  
+  m_provWiFiConfig = m_pService->createCharacteristic(BLE_WIFI_CONFIG_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE); 
+  m_provWiFiConfig->setCallbacks(this);
 
- 
+  m_provWiFiConfigNotify = m_pService->createCharacteristic(BLE_WIFI_CONFIG_NOTIFY_UUID, BLECharacteristic::PROPERTY_NOTIFY); 
+  m_provWiFiConfigNotify->setCallbacks(this);
+  m_provWiFiConfigNotify->addDescriptor(new BLE2902());
+
+  m_provKeyExchange = m_pService->createCharacteristic(BLE_KEY_EXCHANGE_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE); 
+  m_provKeyExchange->setCallbacks(this); 
+
+  m_provKeyExchangeNotify = m_pService->createCharacteristic(BLE_KEY_EXCHANGE_NOTIFY_UUID, BLECharacteristic::PROPERTY_NOTIFY); 
+  m_provKeyExchangeNotify->setCallbacks(this); 
+  m_provWiFiConfigNotify->addDescriptor(new BLE2902());
+
+  m_provCloudCredentialConfig = m_pService->createCharacteristic(BLE_CLOUD_CREDENTIAL_CONFIG_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE); 
+  m_provCloudCredentialConfig->setCallbacks(this); 
+
+  m_provCloudCredentialConfigNotify = m_pService->createCharacteristic(BLE_CLOUD_CREDENTIAL_CONFIG_NOTIFY_UUID, BLECharacteristic::PROPERTY_NOTIFY); 
+  m_provCloudCredentialConfigNotify->setCallbacks(this);
+  m_provWiFiConfigNotify->addDescriptor(new BLE2902());
+
+  m_provWiFiList = m_pService->createCharacteristic(BLE_WIFI_LIST_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE); 
+  m_provWiFiList->setCallbacks(this); 
+
+  m_provWiFiListNotify = m_pService->createCharacteristic(BLE_WIFI_LIST_NOTIFY_UUID, BLECharacteristic::PROPERTY_NOTIFY); 
+  m_provWiFiListNotify->setCallbacks(this);
+  m_provWiFiConfigNotify->addDescriptor(new BLE2902());
+
   m_pService->start();
   
-  m_pAdvertising = NimBLEDevice::getAdvertising();
+  m_pAdvertising = BLEDevice::getAdvertising();
+  m_pAdvertising->addServiceUUID(BLE_SERVICE_UUID);
   m_pAdvertising->setScanResponse(true); // must be true or else BLE name gets truncated
-  m_pAdvertising->addServiceUUID(m_uuidService);
+  m_pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+  m_pAdvertising->setMinPreferred(0x12);  
   m_pAdvertising->start(); 
 
   DEBUG_PROV(PSTR("[BLEProvClass.begin]: done!\r\n"));
@@ -102,7 +85,7 @@ void BLEProvClass::begin(const String &deviceName, const String &retailItemId) {
 /**
 * @brief Generate a session encryption key using public key.
 */
-void BLEProvClass::handleKeyExchange(const std::string& publicKey, NimBLECharacteristic* pCharacteristic) {
+void BLEProvClass::handleKeyExchange(const std::string& publicKey, BLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleKeyExchange()]:: Start!\r\n"));
 
   struct KeyExchangeData {
@@ -146,7 +129,7 @@ void BLEProvClass::handleKeyExchange(const std::string& publicKey, NimBLECharact
 * @brief Called when mobile sends Sinric Pro credentials (appkey, secret, devceids). 
 * Mobile sends authentication config string in chucks due to BLE limitations
 */
-void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredentialsConfigChuck, NimBLECharacteristic* pCharacteristic) {
+void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredentialsConfigChuck, BLECharacteristic* pCharacteristic) {
   if(m_expectedAuthConfigPayloadSize == -1) {
       m_expectedAuthConfigPayloadSize = std::atoi(cloudCredentialsConfigChuck.c_str());
       DEBUG_PROV(PSTR("[BLEProvClass.handleCloudCredentialsConfig()]: Expected config payload size: %d\r\n"), m_expectedAuthConfigPayloadSize);
@@ -194,8 +177,8 @@ void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredenti
           JsonDocument doc;
           doc[F("success")] = false;
           doc[F("message")] = F("Failed set authentication (nocallback)..");
-          serializeJsonPretty(doc, jsonString);
-          pCharacteristic->setValue(jsonString);
+          serializeJson(doc, jsonString);
+          pCharacteristic->setValue((uint8_t *)jsonString.c_str(), jsonString.length());
           pCharacteristic->notify(true);
         }    
     }          
@@ -205,7 +188,7 @@ void BLEProvClass::handleCloudCredentialsConfig(const std::string& cloudCredenti
 /**
 * @brief Called when mobile sends WiFi credentials.
 */
-void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharacteristic* pCharacteristic) {
+void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, BLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: Start!\r\n"));  
  
   if (m_WiFiCredentialsCallbackHandler) {
@@ -233,8 +216,8 @@ void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharact
         serializeJsonPretty(doc, jsonString);
      }
 
-     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: WiFi Config response size: %u\r\n"), jsonString.length());    
-     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: WiFi Config response: %s\r\n"), jsonString.c_str());    
+     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: res size: %u\r\n"), jsonString.length());    
+     DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiConfig()]: res: %s\r\n"), jsonString.c_str());    
       
      splitWrite(m_provWiFiConfigNotify, jsonString);
 
@@ -247,7 +230,7 @@ void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharact
       doc[F("success")] = false;
       doc[F("message")] = F("Wifi Credentials Callback not set!..");
       serializeJsonPretty(doc, jsonString);
-      m_provWiFiConfigNotify->setValue(jsonString);
+      m_provWiFiConfigNotify->setValue((uint8_t*)jsonString.c_str(), jsonString.length());
       m_provWiFiConfigNotify->notify();
    }
 
@@ -257,7 +240,7 @@ void BLEProvClass::handleWiFiConfig(const std::string& wificonfig, NimBLECharact
 /**
 * @brief Called when mobile wants a list of WiFis ESP can connect to.
 */
-void BLEProvClass::handleWiFiList(NimBLECharacteristic* pCharacteristic) {
+void BLEProvClass::handleWiFiList(BLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Start!\r\n"));  
 
   DEBUG_PROV(PSTR("[BLEProvClass.handleWiFiList()]: Scanning networks..!\r\n")); 
@@ -322,21 +305,21 @@ void BLEProvClass::handleWiFiList(NimBLECharacteristic* pCharacteristic) {
 /**
 * @brief Split the data into chunks and write. App will reassemble the complete data from these fragments.
 */
-void BLEProvClass::splitWrite(NimBLECharacteristic * pCharacteristic, const std::string& data) {
+void BLEProvClass::splitWrite(BLECharacteristic * pCharacteristic, const std::string& data) {
   // Write length
-  pCharacteristic->setValue(ProvUtil::to_string(data.length()));
+  std::string lengthStr = std::to_string(data.length());
+  pCharacteristic->setValue((uint8_t *)lengthStr.c_str(), lengthStr.length());
   pCharacteristic->notify(true);
   delay(500);
 
   // Write data
   int offset          = 0;
   int remainingLength = data.length();
-  const uint8_t* str  = reinterpret_cast<const uint8_t*>(data.c_str());
-
+  uint8_t* str  = (uint8_t *)data.c_str();
   while (remainingLength > 0) {
     int bytesToSend = min(BLE_FRAGMENT_SIZE, remainingLength); // send in chunks bytes until all the bytes are sent
     DEBUG_PROV(PSTR("[BLEProvClass.splitWrite()]: Sending %u bytes!\r\n"), bytesToSend);    
-    pCharacteristic->setValue((str + offset), bytesToSend);
+    pCharacteristic->setValue(str + offset, bytesToSend);
     pCharacteristic->notify();
     delay(10);
     remainingLength -= bytesToSend;
@@ -347,7 +330,7 @@ void BLEProvClass::splitWrite(NimBLECharacteristic * pCharacteristic, const std:
 /**
 * @brief Called when mobile wants a information about this device.
 */
-void BLEProvClass::handleProvInfo(NimBLECharacteristic* pCharacteristic) {
+void BLEProvClass::handleProvInfo(BLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleProvInfo()]: Start!\r\n"));  
 
   std::string jsonString;
@@ -364,45 +347,47 @@ void BLEProvClass::handleProvInfo(NimBLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.handleProvInfo()]: End!\r\n"));    
 }
 
-void BLEProvClass::onWrite(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc) {
+void BLEProvClass::onWrite(BLECharacteristic* pCharacteristic) {
   DEBUG_PROV(PSTR("[BLEProvClass.onWrite()]: UUID: %s, Got: %s\r\n"), pCharacteristic->getUUID().toString().c_str(), pCharacteristic->getValue().c_str());
-  if (pCharacteristic == m_provKeyExchange && m_provKeyExchange->getDataLength()) { 
-     handleKeyExchange(m_provKeyExchange->getValue(), pCharacteristic); 
-  }        
-  else if (pCharacteristic == m_provWiFiConfig && m_provWiFiConfig->getDataLength()) { 
-    handleWiFiConfig(m_provWiFiConfig->getValue(), pCharacteristic);
-  }
-  else if (pCharacteristic == m_provCloudCredentialConfig && m_provCloudCredentialConfig->getDataLength()) { 
-    handleCloudCredentialsConfig(m_provCloudCredentialConfig->getValue(), pCharacteristic);
-  }
-  else if (pCharacteristic == m_provWiFiList) { 
-    handleWiFiList(pCharacteristic);
-  }
-  else if (pCharacteristic == m_provInfo) { 
-    handleProvInfo(pCharacteristic);
-  } else {
-    DEBUG_PROV(PSTR("[BLEProvClass.onWrite()]: Characteristic not found!"));
-  }     
+  // TODO: Fix later
+
+  // if (pCharacteristic == m_provKeyExchange && m_provKeyExchange->getDataLength()) { 
+  //    handleKeyExchange(m_provKeyExchange->getValue(), pCharacteristic); 
+  // }        
+  // else if (pCharacteristic == m_provWiFiConfig && m_provWiFiConfig->getDataLength()) { 
+  //   handleWiFiConfig(m_provWiFiConfig->getValue(), pCharacteristic);
+  // }
+  // else if (pCharacteristic == m_provCloudCredentialConfig && m_provCloudCredentialConfig->getDataLength()) { 
+  //   handleCloudCredentialsConfig(m_provCloudCredentialConfig->getValue(), pCharacteristic);
+  // }
+  // else if (pCharacteristic == m_provWiFiList) { 
+  //   handleWiFiList(pCharacteristic);
+  // }
+  // else if (pCharacteristic == m_provInfo) { 
+  //   handleProvInfo(pCharacteristic);
+  // } else {
+  //   DEBUG_PROV(PSTR("[BLEProvClass.onWrite()]: Characteristic not found!\r\n"));
+  // }     
 }
 
 /**
 * @brief Called when client connect.
 */
-void BLEProvClass::onConnect(NimBLEServer* pServer) {
+void BLEProvClass::onConnect(BLEServer* pServer) {
   DEBUG_PROV(PSTR("[BLEProvClass.onConnect()]: Client connected\r\n"));
 }
 
-/**
-* @brief Show connected client MTU.
-*/
-void BLEProvClass::onConnect(BLEServer* pServer, ble_gap_conn_desc* desc) {
-  DEBUG_PROV(PSTR("[BLEProvClass.onConnect()]: MTU of client: %d\r\n"), pServer->getPeerMTU(desc->conn_handle));
-}
+// /**
+// * @brief Show connected client MTU.
+// */
+// void BLEProvClass::onConnect(BLEServer* pServer) {
+//   //DEBUG_PROV(PSTR("[BLEProvClass.onConnect()]: MTU of client: %d\r\n"), pServer->getPeerMTU(desc->conn_handle));
+// }
 
 /**
 * @brief Called when client disconnect..
 */
-void BLEProvClass::onDisconnect(NimBLEServer* pServer) {
+void BLEProvClass::onDisconnect(BLEServer* pServer) {
   DEBUG_PROV(PSTR("[BLEProvClass.onDisconnect()]: Client disconnected\r\n"));
 
   if (m_begin) { 
@@ -414,8 +399,8 @@ void BLEProvClass::onDisconnect(NimBLEServer* pServer) {
 /**
 * @brief Called when client request for different MTU..
 */
-void BLEProvClass::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
-  DEBUG_PROV(PSTR("[BLEProvClass.onMTUChange()]: MTU updated: %u for connection ID: %u\r\n"), MTU, desc->conn_handle);
+void BLEProvClass::onMTUChange(uint16_t MTU) {
+  DEBUG_PROV(PSTR("[BLEProvClass.onMTUChange()]: MTU updated: %u\r\n"), MTU);
 };
 
 /**
@@ -433,7 +418,7 @@ void BLEProvClass::stop() {
 * @brief Deinit BLE ..
 */
 void BLEProvClass::deinit() {
-  NimBLEDevice::deinit();
+  BLEDevice::deinit();
 }
 
 /**
@@ -461,7 +446,7 @@ void BLEProvClass::onBleProvDone(BleProvDoneCallbackHandler cb) {
 * @brief Get called when BLE MAC required
 */
 String BLEProvClass::getBLEMac() {
-  return String(NimBLEDevice::getAddress().toString().c_str());
+  return String(BLEDevice::getAddress().toString().c_str());
 }
 
 /**
