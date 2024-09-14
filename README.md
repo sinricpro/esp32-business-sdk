@@ -1,4 +1,4 @@
-# SinricPro Business SDK
+# SinricPro for Business SDK
 
 The SinricPro Business SDK empowers you to develop commercial products quickly. Prototype and launch in days, not years.
 
