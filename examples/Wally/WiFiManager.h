@@ -4,6 +4,7 @@
 #include <WiFi.h>
 #include "FS.h"
 #include "SPIFFS.h"
+#include "Settings.h"
 
 /**
  *  @brief Manages SinricPro using primary and secondary SSID configurations.
@@ -22,7 +23,7 @@ public:
    * 
    * @param configFileName File name for storing WiFi settings.
    */
-  WiFiManager(const char* configFileName);
+  WiFiManager(const char* configFileName = WIFI_CONFIG_FILE_NAME);
 
   /**
    * @brief Initializes the WiFi manager, loading settings from file or using defaults if loading fails.
@@ -76,6 +77,11 @@ public:
 
   bool setWiFiConfig(const String& localIP, const String& gateway, const String& subnet, const String& dns1, const String& dns2);
 
+  /**
+   * @brief Deletes all the stored WiFi settings.
+   */
+  void clear();
+
 private:
   const char* m_configFileName;            ///< File name to store WiFi settings.
   wifi_settings_t m_wifiSettings;          ///< WiFi settings.
@@ -108,8 +114,5 @@ private:
    */
   bool validatePassword(const char* password) const;
 
-  /**
-   * @brief Deletes all the stored WiFi settings.
-   */
-  void deleteAllSettings();
+
 };

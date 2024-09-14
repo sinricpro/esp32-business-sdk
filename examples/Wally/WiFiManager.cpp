@@ -74,7 +74,7 @@ bool WiFiManager::loadFromFile() {
   return false;
 }
 
-void WiFiManager::deleteAllSettings() {
+void WiFiManager::clear() {
   memset(&m_wifiSettings, 0, sizeof(m_wifiSettings));
   if (SPIFFS.exists(m_configFileName)) {
     SPIFFS.remove(m_configFileName);

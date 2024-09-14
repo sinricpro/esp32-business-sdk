@@ -74,7 +74,7 @@ ConfigStore::ConfigStore(DeviceConfig &config)
 ConfigStore::~ConfigStore() {}
 
 bool ConfigStore::loadConfig() {
-  Serial.printf("[ConfigStore.loadConfig()] Loading config...\r\n");
+  Serial.printf("[ConfigStore.loadConfig()]: Loading config...\r\n");
 
   File configFile = SPIFFS.open(PRODUCT_CONFIG_FILE, "r");
   if (!configFile) {
@@ -86,14 +86,15 @@ bool ConfigStore::loadConfig() {
   DeserializationError err = deserializeJson(doc, configFile);
 
   if (err) {
-#ifdef ENABLE_DEBUG
-    Serial.print("File size: ");
-    Serial.println(configFile.size());
-    Serial.print("File contents: ");
-    while (configFile.available()) {
-      Serial.write(configFile.read());
-    }
-#endif
+    #ifdef ENABLE_DEBUG
+        Serial.print("File size: ");
+        Serial.println(configFile.size());
+        Serial.print("File contents: ");
+        while (configFile.available()) {
+          Serial.write(configFile.read());
+        }
+        Serial.println();
+    #endif
 
     configFile.close();
     Serial.printf("[ConfigStore.loadConfig()]: deserializeJson() failed: %s\r\n", err.c_str());
