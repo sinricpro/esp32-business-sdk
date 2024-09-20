@@ -1,6 +1,12 @@
 /**
  * @brief Example firmware for two-channel relay controller (Wally) using SinricPro ESP32 Business SDK
  *
+ * Features: 
+ *  Two switches are connected to GPIO 32, 33
+ *  Relays are connected to GPIO 27, 14
+ *  Reset push button is connected to GPIO 0
+ *  Status single color LED is connected to GPIO 13
+ *
  * @note This code supports ESP32 only.
  * @note Change Tools -> Flash Size -> Minimum SPIFF
  * @note To enable ESP32 logs: Tools -> Core Debug Level -> Verbose
@@ -15,7 +21,7 @@
 #include <SinricProBusinessSdk.h>
 
 #include "Settings.h"
-#include "ConfigStore.h"
+#include "ProductConfigManager.h"
 #include "WiFiManager.h"
 #include "WiFiProvisioningManager.h"
 #include "OTAManager.h"
@@ -26,8 +32,8 @@
 #include "SinricProSwitch.h"
 
 // Global variables and objects
-DeviceConfig m_config;
-ConfigStore m_productConfig(m_config);
+ProductConfig_t m_config;
+ProductConfigManager m_productConfig(m_config);
 WiFiManager m_wifiManager;
 WiFiProvisioningManager m_provisioningManager(m_productConfig, m_wifiManager);
 ModuleSettingsManager m_moduleSettingsManager(m_wifiManager);
@@ -110,11 +116,10 @@ void handleSwitchButtonPress() {
     mySwitch2.sendPowerStateEvent(switch2_power_state);
   }
 
-  // Read GPIO0 (external button to reset)
-  if (digitalRead(gpio_reset) == LOW) {  //Push button pressed
+  // Read external button to restart or factory reset
+  if (digitalRead(gpio_reset) == LOW) {  // Push button pressed
     Serial.printf("Reset Button Pressed!\n");
-    // Key debounce handling
-    delay(100);
+    delay(100); // handle debounce
     int startTime = millis();
     while (digitalRead(gpio_reset) == LOW) {
       delay(50);
@@ -133,12 +138,6 @@ void handleSwitchButtonPress() {
 
 /**
  * @brief Callback function for power state changes
- *
- * This function is called when a power state change is requested for a switch.
- *
- * @param deviceId The ID of the device
- * @param state The new power state (true for on, false for off)
- * @return true if the request was handled properly
  */
 bool onPowerState(const String& deviceId, bool& state) {
   if (strcmp(m_config.switch_1_id, deviceId.c_str()) == 0) {
@@ -157,16 +156,10 @@ bool onPowerState(const String& deviceId, bool& state) {
 }
 
 /**
- * @brief Callback function for setting module settings
- *
- * This function is called when a module setting change is requested.
- *
- * @param id The ID of the setting
- * @param value The new value for the setting
- * @return true if the setting was changed successfully
+ * @brief Callback function for setting module settings 
  */
 bool onSetModuleSetting(const String& id, const String& value) {
-  SetModuleSettingResult result = m_moduleSettingsManager.handleSetModuleSetting(id, value);
+  SetModuleSettingResult_t result = m_moduleSettingsManager.handleSetModuleSetting(id, value);
   if (!result.success) {
     SinricPro.setResponseMessage(std::move(result.message));
   }
@@ -175,18 +168,9 @@ bool onSetModuleSetting(const String& id, const String& value) {
 
 /**
  * @brief Callback function for OTA updates
- *
- * This function is called when an OTA update is requested.
- *
- * @param url The URL of the update
- * @param major Major version number
- * @param minor Minor version number
- * @param patch Patch version number
- * @param forceUpdate Whether to force the update
- * @return true if the update was successful
  */
 bool onOTAUpdate(const String& url, int major, int minor, int patch, bool forceUpdate) {
-  OtaUpdateResult result = m_otaManager.handleOTAUpdate(FIRMWARE_VERSION, url, major, minor, patch, forceUpdate);
+  OtaUpdateResult_t result = m_otaManager.handleOTAUpdate(FIRMWARE_VERSION, url, major, minor, patch, forceUpdate);
   if (!result.success) {
     SinricPro.setResponseMessage(std::move(result.message));
   }
@@ -194,9 +178,7 @@ bool onOTAUpdate(const String& url, int major, int minor, int patch, bool forceU
 }
 
 /**
- * @brief Set up SinricPro
- *
- * This function initializes SinricPro and sets up the necessary callbacks.
+ * @brief Initialize SinricPro and sets up the necessary callbacks.
  */
 void setupSinricPro() {
   Serial.printf("[setupSinricPro()]: Setup SinricPro.\r\n");
@@ -278,10 +260,7 @@ void setupSPIFFS() {
 }
 
 /**
- * @brief Handle no heartbeat situation
- *
- * This function checks if there's been no heartbeat from the server for a specified interval,
- * and resets the ESP32 if necessary.
+ * if there's been no heartbeat from the server for a specified interval restart the ESP32.
  */
 void handleNoHeartbeat() {
   unsigned long currentMillis = millis();
@@ -292,9 +271,7 @@ void handleNoHeartbeat() {
 }
 
 /**
- * @brief Load product and WiFi configuration
- *
- * This function loads the device configuration and sets up the WiFi connection.
+ * @brief Load product configuration and set up the WiFi connection.
  * If the product is not provisioned, it begins the provisioning process.
  */
 void setupConfig() {
@@ -307,7 +284,7 @@ void setupConfig() {
       return;
     }
   } else {
-    // If configuration not loaded, start provisioning process
+    // start provisioning process
     Serial.printf("[setupConfig()]: Beginning provisioning...\r\n");
 
     if (!m_provisioningManager.beginProvision(PRODUCT_ID)) {
@@ -359,6 +336,5 @@ void loop() {
   SinricPro.handle();
   handleNoHeartbeat();
   handleSwitchButtonPress();
-  delay(100);
   // Note: Avoid using delay() in the loop. Use non-blocking techniques for timing.
 }

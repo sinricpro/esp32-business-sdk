@@ -1,17 +1,17 @@
 #pragma once
 
-#define FORMAT_SPIFFS_IF_FAILED       true
-#define WIFI_CONFIG_FILE_NAME         "/wificonfig.dat" /* File name to store wifi configurations  */
-#define NO_HEART_BEAT_RESET_INTERVAL  900000            /* If there's no heart-beat ping-pong for 15 mins. reset ESP interval */
-#define BAUDRATE                      115200
+#define FORMAT_SPIFFS_IF_FAILED true
+#define WIFI_CONFIG_FILE_NAME "/wificonfig.dat" /* File name to store wifi configurations  */
+#define NO_HEART_BEAT_RESET_INTERVAL 900000     /* If there's no heart-beat ping-pong for 15 mins. reset ESP interval */
+#define BAUDRATE 115200
 // #define ENABLE_SSL_ROOT_CA_CERT_VALIDATION 1         /* Validate the Root-CA when downloading OTA updates */
 // #define ENABLE_DEBUG                                 /* Enable SinricPro SDK Logs. */
 
 #ifdef ENABLE_DEBUG
-  #define DEBUG_ESP_PORT Serial
-  #define NODEBUG_WEBSOCKETS
-  #define NDEBUG
-#endif  
+#define DEBUG_ESP_PORT Serial
+#define NODEBUG_WEBSOCKETS
+#define NDEBUG
+#endif
 
 const int WIFI_CONNECTION_TIMEOUT_MS = 1000 * 60 * 10;  // 10 minutes timeout
 

@@ -8,7 +8,7 @@
 #pragma once
 
 #include <SinricProBusinessSdk.h>
-#include "ConfigStore.h"
+#include "ProductConfigManager.h"
 #include "WiFiManager.h"
 
 /**
@@ -22,10 +22,10 @@ class WiFiProvisioningManager {
 public:
   /**
   * @brief Constructor for WiFiProvisioningManager.
-  * @param config Reference to the ConfigStore object.
+  * @param config Reference to the ProductConfigManager object.
   * @param wifiManager Reference to the WiFiManager object.
   */
-  WiFiProvisioningManager(ConfigStore& config, WiFiManager& wifiManager);
+  WiFiProvisioningManager(ProductConfigManager& config, WiFiManager& wifiManager);
 
   /**
   * @brief Starts the WiFi provisioning process.
@@ -35,7 +35,7 @@ public:
   bool beginProvision(String productId);
 
 private:
-  ConfigStore& m_configStore;
+  ProductConfigManager& m_ProductConfigManager;
   WiFiManager& m_wifiManager;
 
   /**
@@ -52,8 +52,8 @@ private:
 };
 
 // Constructor implementation
-WiFiProvisioningManager::WiFiProvisioningManager(ConfigStore& config, WiFiManager& wifiManager)
-  : m_configStore(config), m_wifiManager(wifiManager) {}
+WiFiProvisioningManager::WiFiProvisioningManager(ProductConfigManager& config, WiFiManager& wifiManager)
+  : m_ProductConfigManager(config), m_wifiManager(wifiManager) {}
 
 // LED indicator handling (to be implemented)
 void WiFiProvisioningManager::handleLedIndicator(int state) {
@@ -72,7 +72,7 @@ void WiFiProvisioningManager::handleLedIndicator(int state) {
 
 // Button handling (to be implemented)
 void WiFiProvisioningManager::handleButton(int state) {
-  // TODO: Implement button handling logic
+  // TODO: Implement button handling logic during provisioning.
 }
 
 // Main provisioning process
@@ -96,7 +96,7 @@ bool WiFiProvisioningManager::beginProvision(String productId) {
       Serial.printf("[WiFiProvisioningManager.beginProvision()]: deserializeJson() failed: %s\n", error.c_str());
       return false;
     } else {
-      if (m_configStore.saveJsonConfig(jsonConfig)) {
+      if (m_ProductConfigManager.saveJsonConfig(jsonConfig)) {
         Serial.println(F("[WiFiProvisioningManager.beginProvision()]: Configuration updated!"));
         return true;
       } else {

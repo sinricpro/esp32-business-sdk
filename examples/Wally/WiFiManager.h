@@ -6,18 +6,18 @@
 #include "SPIFFS.h"
 #include "Settings.h"
 
+struct WifiSettings_t {
+  char primarySSID[32];        ///< Primary SSID of the WiFi network.
+  char primaryPassword[64];    ///< Primary password of the WiFi network.
+  char secondarySSID[32];      ///< Secondary SSID of the WiFi network.
+  char secondaryPassword[64];  ///< Secondary password of the WiFi network.
+};
+
 /**
  *  @brief Manages SinricPro using primary and secondary SSID configurations.
  */
 class WiFiManager {
 public:
-  struct wifi_settings_t {
-    char primarySSID[32];        ///< Primary SSID of the WiFi network.
-    char primaryPassword[64];    ///< Primary password of the WiFi network.
-    char secondarySSID[32];      ///< Secondary SSID of the WiFi network.
-    char secondaryPassword[64];  ///< Secondary password of the WiFi network.
-  };
-
   /**
    * @brief Construct a new WiFiManager object with default WiFi settings.
    * 
@@ -63,7 +63,7 @@ public:
   /**
    * @brief Returns WiFi settings.
    */
-  const wifi_settings_t& getWiFiSettings() const;
+  const WifiSettings_t& getWiFiSettings() const;
 
   /**
    * @brief Connect to primary or secondary WiFi.
@@ -83,8 +83,8 @@ public:
   void clear();
 
 private:
-  const char* m_configFileName;            ///< File name to store WiFi settings.
-  wifi_settings_t m_wifiSettings;          ///< WiFi settings.
+  const char* m_configFileName;   ///< File name to store WiFi settings.
+  WifiSettings_t m_wifiSettings;  ///< WiFi settings.
 
   /**
    * @brief Saves the current WiFi settings to a file.
@@ -113,6 +113,182 @@ private:
    * @return true if the password is valid, false otherwise.
    */
   bool validatePassword(const char* password) const;
-
-
 };
+
+WiFiManager::WiFiManager(const char* configFileName)
+  : m_configFileName(configFileName) {
+  memset(&m_wifiSettings, 0, sizeof(m_wifiSettings));
+}
+
+bool WiFiManager::loadConfig() {
+  if (loadFromFile()) {
+    printSettings();
+    return true;
+  } else {
+    Serial.println("[WiFiManager::loadConfig()]: Load WiFi config failed!");
+    return false;
+  }
+}
+
+bool WiFiManager::updatePrimarySettings(const char* newSSID, const char* newPassword) {
+  if (isValidSetting(newSSID, newPassword)) {
+    strncpy(m_wifiSettings.primarySSID, newSSID, sizeof(m_wifiSettings.primarySSID));
+    strncpy(m_wifiSettings.primaryPassword, newPassword, sizeof(m_wifiSettings.primaryPassword));
+    return saveToFile();
+  } else {
+    Serial.println("[WiFiManager::updatePrimarySettings()]: Invalid Primary SSID or Password");
+    return false;
+  }
+}
+
+bool WiFiManager::updateSecondarySettings(const char* newSSID, const char* newPassword) {
+  if (isValidSetting(newSSID, newPassword)) {
+    strncpy(m_wifiSettings.secondarySSID, newSSID, sizeof(m_wifiSettings.secondarySSID));
+    strncpy(m_wifiSettings.secondaryPassword, newPassword, sizeof(m_wifiSettings.secondaryPassword));
+    return saveToFile();
+  } else {
+    Serial.println("[WiFiManager::updateSecondarySettings()]: Invalid Secondary SSID or Password");
+    return false;
+  }
+}
+
+void WiFiManager::printSettings() const {
+  Serial.printf("Primary SSID: %s\n", m_wifiSettings.primarySSID);
+  Serial.printf("Primary Password: %s\n", m_wifiSettings.primaryPassword);
+  Serial.printf("Secondary SSID: %s\n", m_wifiSettings.secondarySSID);
+  Serial.printf("Secondary Password: %s\n", m_wifiSettings.secondaryPassword);
+}
+
+bool WiFiManager::saveToFile() {
+  File file = SPIFFS.open(m_configFileName, FILE_WRITE);
+  if (file) {
+    /* below line will throw an exception if the SPIFFS is not setup */
+    file.write(reinterpret_cast<const uint8_t*>(&m_wifiSettings), sizeof(m_wifiSettings));
+    file.close();
+    return true;
+  } else {
+    Serial.printf("[WiFiManager::saveToFile()]: Failed to save WiFi config to: %s\n", m_configFileName);
+    return false;
+  }
+}
+
+bool WiFiManager::loadFromFile() {
+  File file = SPIFFS.open(m_configFileName, FILE_READ);
+  if (file && file.size() == sizeof(m_wifiSettings)) {
+    file.read(reinterpret_cast<uint8_t*>(&m_wifiSettings), sizeof(m_wifiSettings));
+    file.close();
+    return true;
+  }
+  return false;
+}
+
+void WiFiManager::clear() {
+  memset(&m_wifiSettings, 0, sizeof(m_wifiSettings));
+  if (SPIFFS.exists(m_configFileName)) {
+    SPIFFS.remove(m_configFileName);
+  }
+  Serial.println("[WiFiManager::clear()]: All WiFi settings have been deleted.");
+}
+
+bool WiFiManager::isValidSetting(const char* ssid, const char* password) const {
+  return validateSSID(ssid) && validatePassword(password);
+}
+
+bool WiFiManager::validateSSID(const char* ssid) const {
+  return ssid && strlen(ssid) > 0 && strlen(ssid) < sizeof(WifiSettings_t::primarySSID);
+}
+
+bool WiFiManager::validatePassword(const char* password) const {
+  return password && strlen(password) < sizeof(WifiSettings_t::primaryPassword);
+}
+
+bool WiFiManager::setWiFiConfig(const String& localIP, const String& gateway, const String& subnet, const String& dns1, const String& dns2) {
+  IPAddress local_IP, gateway_IP, subnet_IP, dns1_IP, dns2_IP;
+  local_IP.fromString(localIP);
+  gateway_IP.fromString(gateway);
+  subnet_IP.fromString(subnet);
+
+  if (dns1 != "") {
+    dns1_IP.fromString(dns1);
+  }
+  if (dns2 != "") {
+    dns2_IP.fromString(dns2);
+  }
+
+  // Configure static IP address
+  if (dns1 != "" && dns2 != "") {
+    if (!WiFi.config(local_IP, gateway_IP, subnet_IP, dns1_IP, dns2_IP)) {
+      Serial.println("[WiFiManager::setWiFiConfig()]: STA Failed to configure");
+      return false;
+    }
+  } else if (dns1 != "") {
+    if (!WiFi.config(local_IP, gateway_IP, subnet_IP, dns1_IP)) {
+      Serial.println("[WiFiManager::setWiFiConfig()]: STA Failed to configure");
+      return false;
+    }
+  } else {
+    if (!WiFi.config(local_IP, gateway_IP, subnet_IP)) {
+      Serial.println("[WiFiManager::setWiFiConfig()]: STA Failed to configure");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+const WifiSettings_t& WiFiManager::getWiFiSettings() const {
+  return m_wifiSettings;
+}
+
+bool WiFiManager::connectToWiFi() {
+  auto& settings = getWiFiSettings();
+  bool connected = false;
+
+  if (isValidSetting(settings.primarySSID, settings.primaryPassword)) {
+    connected = connectToWiFi(settings.primarySSID, settings.primaryPassword);
+  }
+
+  if (!connected && isValidSetting(settings.secondarySSID, settings.secondaryPassword)) {
+    connected = connectToWiFi(settings.secondarySSID, settings.secondaryPassword);
+  }
+
+  if (connected) {
+    Serial.println("Connected to WiFi!");
+  } else {
+    Serial.println("Failed to connect to WiFi!");
+  }
+
+  return connected;
+}
+
+bool WiFiManager::connectToWiFi(const char* wifi_ssid, const char* wifi_password) {
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0))
+  WiFi.setMinSecurity(WIFI_AUTH_WEP);  // https://github.com/espressif/arduino-esp32/blob/master/docs/source/troubleshooting.rst
+#endif
+
+  WiFi.disconnect();
+  delay(10);
+
+  Serial.print("Connecting to ");
+  Serial.println(wifi_ssid);
+
+  WiFi.setSleep(false);
+  WiFi.begin(wifi_ssid, wifi_password);
+
+  int timeout = 0;
+  while (WiFi.status() != WL_CONNECTED && timeout < 30) {
+    delay(500);
+    Serial.print(".");
+    timeout++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.printf("[WiFiManager.connectToWiFi()]: WiFi connected.");
+    Serial.printf("IP: %s\r\n", WiFi.localIP().toString().c_str());
+    WiFi.setAutoReconnect(true);
+    return true;
+  } else {
+    Serial.printf("[WiFiManager.connectToWiFi()]: WiFi connection failed!\r\n");
+    return false;
+  }
+}

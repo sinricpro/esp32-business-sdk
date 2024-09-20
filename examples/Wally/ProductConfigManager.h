@@ -12,38 +12,38 @@
 #include "SPIFFS.h"
 
 /**
- * @struct DeviceConfig
- * @brief Holds the configuration data for the device.
+ * @struct ProductConfig_t
+ * @brief Holds the configuration data of the product.
  * 
- * If you need security, please save this to NVS
+ * @note If you need additional security for app secret, please save this to NVS
  */
-struct DeviceConfig {
+struct ProductConfig_t {
   char appKey[38];     ///< Application key
   char appSecret[76];  ///< Application secret
-  
-  char switch_1_id[26];   ///< ID for switch 1
-  char switch_1_name[32]; ///< Name for switch 1
 
-  char switch_2_id[26];   ///< ID for switch 2
-  char switch_2_name[32]; ///< Name for switch 2
+  char switch_1_id[26];    ///< ID for switch 1
+  char switch_1_name[32];  ///< Name for switch 1
+
+  char switch_2_id[26];    ///< ID for switch 2
+  char switch_2_name[32];  ///< Name for switch 2
 };
 
 /**
- * @class ConfigStore
+ * @class ProductConfigManager
  * @brief Manages the loading, saving, and clearing of device configuration.
  */
-class ConfigStore {
+class ProductConfigManager {
 public:
   /**
-     * @brief Constructor for ConfigStore.
-     * @param config Reference to a DeviceConfig object to store the configuration.
+     * @brief Constructor for ProductConfigManager.
+     * @param config Reference to a ProductConfig_t object to store the configuration.
      */
-  ConfigStore(DeviceConfig &config);
+  ProductConfigManager(ProductConfig_t &config);
 
   /**
-     * @brief Destructor for ConfigStore.
+     * @brief Destructor for ProductConfigManager.
      */
-  ~ConfigStore();
+  ~ProductConfigManager();
 
   /**
      * @brief Loads the configuration from the file system.
@@ -65,20 +65,25 @@ public:
   bool clear();
 
 private:
-  DeviceConfig &config;     ///< Reference to the DeviceConfig object
+  ProductConfig_t &config;  ///< Reference to the ProductConfig_t object
   Preferences preferences;  ///< Preferences object for storing data
 };
 
-ConfigStore::ConfigStore(DeviceConfig &config)
+ProductConfigManager::ProductConfigManager(ProductConfig_t &config)
   : config(config) {}
-ConfigStore::~ConfigStore() {}
+ProductConfigManager::~ProductConfigManager() {}
 
-bool ConfigStore::loadConfig() {
-  Serial.printf("[ConfigStore.loadConfig()]: Loading config...\r\n");
+bool ProductConfigManager::loadConfig() {
+  Serial.printf("[ProductConfigManager.loadConfig()]: Loading config...\r\n");
+
+  if (!SPIFFS.exists(PRODUCT_CONFIG_FILE)) {
+    Serial.printf("[ProductConfigManager.loadConfig()]: Config file does not exist! New device?\r\n");
+    return false;
+  }
 
   File configFile = SPIFFS.open(PRODUCT_CONFIG_FILE, "r");
   if (!configFile) {
-    Serial.printf("[ConfigStore.loadConfig()]: Config file does not exist! New device?\r\n");
+    Serial.printf("[ProductConfigManager.loadConfig()]: Failed to open config file!!\r\n");
     return false;
   }
 
@@ -86,24 +91,20 @@ bool ConfigStore::loadConfig() {
   DeserializationError err = deserializeJson(doc, configFile);
 
   if (err) {
-    #ifdef ENABLE_DEBUG
-        Serial.print("File size: ");
-        Serial.println(configFile.size());
-        Serial.print("File contents: ");
-        while (configFile.available()) {
-          Serial.write(configFile.read());
-        }
-        Serial.println();
-    #endif
+    Serial.printf("[ProductConfigManager.loadConfig()]: deserializeJson() failed: %s\r\n", err.c_str());
+    Serial.print("[ProductConfigManager.loadConfig()]: File size: ");
+    Serial.println(configFile.size());
+    Serial.print("File contents: ");
+    while (configFile.available()) {
+      Serial.write(configFile.read());
+    }
+    Serial.println();
 
-    configFile.close();
-    Serial.printf("[ConfigStore.loadConfig()]: deserializeJson() failed: %s\r\n", err.c_str());
+    configFile.close();    
     return false;
   }
 
-#ifdef ENABLE_DEBUG
   serializeJsonPretty(doc, Serial);
-#endif
 
   // Copy configuration data from JSON to config struct
   strlcpy(config.appKey, doc[F("credentials")][F("appkey")] | "", sizeof(config.appKey));
@@ -121,30 +122,30 @@ bool ConfigStore::loadConfig() {
   return true;
 }
 
-bool ConfigStore::saveJsonConfig(const JsonDocument &doc) {
-  Serial.printf("[ConfigStore.saveJsonConfig()]: Saving config...\r\n");
+bool ProductConfigManager::saveJsonConfig(const JsonDocument &doc) {
+  Serial.printf("[ProductConfigManager.saveJsonConfig()]: Saving config...\r\n");
 
   String appKey = doc[F("credentials")][F("appkey")] | "";
   String appSecret = doc[F("credentials")][F("appsecret")] | "";
 
   if (appKey.length() == 0 || appSecret.length() == 0) {
-    Serial.printf("[ConfigStore.saveJsonConfig()]: Failed! Invalid configurations!\r\n");
+    Serial.printf("[ProductConfigManager.saveJsonConfig()]: Failed! Invalid configurations!\r\n");
     return false;
   }
 
-  Serial.printf("[ConfigStore.saveJsonConfig()]: config: \r\n");
+  Serial.printf("[ProductConfigManager.saveJsonConfig()]: config: \r\n");
   serializeJsonPretty(doc, Serial);
 
   // Remove existing config file if it exists
   if (SPIFFS.exists(PRODUCT_CONFIG_FILE)) {
-    Serial.printf("[ConfigStore.saveJsonConfig()]: Removing existing config file..\r\n");
+    Serial.printf("[ProductConfigManager.saveJsonConfig()]: Removing existing config file..\r\n");
     SPIFFS.remove(PRODUCT_CONFIG_FILE);
   }
 
   File configFile = SPIFFS.open(PRODUCT_CONFIG_FILE, FILE_WRITE);
 
   if (!configFile) {
-    Serial.printf("[ConfigStore.saveJsonConfig] Open config file failed!!!\r\n");
+    Serial.printf("[ProductConfigManager.saveJsonConfig] Open config file failed!!!\r\n");
     return false;
   }
 
@@ -154,25 +155,25 @@ bool ConfigStore::saveJsonConfig(const JsonDocument &doc) {
   size_t bytesWritten = configFile.print(jsonStr);
   configFile.close();
 
-  Serial.printf("[ConfigStore.saveJsonConfig] Bytes written: %u\r\n", bytesWritten);
+  Serial.printf("[ProductConfigManager.saveJsonConfig] Bytes written: %u\r\n", bytesWritten);
 
   // Update config struct with new values
   strlcpy(config.appKey, appKey.c_str(), sizeof(config.appKey));
   strlcpy(config.appSecret, appSecret.c_str(), sizeof(config.appSecret));
-  
+
   strlcpy(config.switch_1_id, doc[F("devices")][0][F("id")] | "", sizeof(config.switch_1_id));
   strlcpy(config.switch_1_name, doc[F("devices")][0][F("name")] | "", sizeof(config.switch_1_name));
 
   strlcpy(config.switch_2_id, doc[F("devices")][1][F("id")] | "", sizeof(config.switch_2_id));
   strlcpy(config.switch_2_name, doc[F("devices")][1][F("name")] | "", sizeof(config.switch_2_name));
 
-  Serial.printf("[ConfigStore.saveJsonConfig()]: success!\r\n");
+  Serial.printf("[ProductConfigManager.saveJsonConfig()]: success!\r\n");
 
   return true;
 }
 
-bool ConfigStore::clear() {
-  Serial.printf("[ConfigStore.clear()]: Clear config...");
+bool ProductConfigManager::clear() {
+  Serial.printf("[ProductConfigManager.clear()]: Clear config...");
 
   // Remove config file from file system
   SPIFFS.begin();
