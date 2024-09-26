@@ -298,20 +298,20 @@ void setupConfig() {
  * @brief Connects to WiFi 
  */
 void setupWiFi() {
-  Serial.printf("[loadConfigAndSetupWiFi()]: Loading config...\r\n");
+  Serial.printf("[setupWiFi()]: Loading config...\r\n");
 
   // Set up timeout for WiFi connection attempts
   unsigned long startMillis = millis();
 
   // Attempt to connect to WiFi
   while (!m_wifiManager.connectToWiFi()) {
-    Serial.printf("[loadConfigAndSetupWiFi()]: Cannot connect to WiFi. Retry in 30 seconds!\r\n");
+    Serial.printf("[setupWiFi()]: Cannot connect to WiFi. Retry in 30 seconds!\r\n");
     delay(30000);  // Wait for 30 seconds before retrying
-    Serial.printf("[loadConfigAndSetupWiFi()]: Attempting reconnection...\r\n");
+    Serial.printf("[setupWiFi()]: Attempting reconnection...\r\n");
 
     // Check if timeout has been reached
     if ((millis() - startMillis) > WIFI_CONNECTION_TIMEOUT_MS) {
-      Serial.printf("[loadConfigAndSetupWiFi()]: Connection retry timeout. Restarting ESP...\r\n");
+      Serial.printf("[setupWiFi()]: Connection retry timeout. Restarting ESP...\r\n");
       ESP.restart();  // Restart the ESP if connection fails after timeout
     }
   }
