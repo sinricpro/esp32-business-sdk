@@ -49,7 +49,7 @@ public:
   /**
    * @brief Prints the current WiFi settings to the Serial console.
    */
-  void printSettings() const;
+  void printSettings();
 
   /**
    * @brief Checks if the provided SSID and password are valid.
@@ -113,6 +113,12 @@ private:
    * @return true if the password is valid, false otherwise.
    */
   bool validatePassword(const char* password) const;
+
+  /**
+   * @brief Mask password.
+   * 
+   */
+  void maskPassword(char* password, int showStart, int showEnd, char* maskedPassword);
 };
 
 WiFiManager::WiFiManager(const char* configFileName)
@@ -152,11 +158,24 @@ bool WiFiManager::updateSecondarySettings(const char* newSSID, const char* newPa
   }
 }
 
-void WiFiManager::printSettings() const {
-  Serial.printf("Primary SSID: %s\n", m_wifiSettings.primarySSID);
-  Serial.printf("Primary Password: %s\n", m_wifiSettings.primaryPassword);
-  Serial.printf("Secondary SSID: %s\n", m_wifiSettings.secondarySSID);
-  Serial.printf("Secondary Password: %s\n", m_wifiSettings.secondaryPassword);
+void WiFiManager::printSettings() {
+  if(strlen(m_wifiSettings.primarySSID) == 0) {
+    Serial.printf("[WiFiManager::printSettings()]: Primary wifi setting is empty!\n");
+  } else {
+    Serial.printf("[WiFiManager::printSettings()]: Primary SSID: %s\n", m_wifiSettings.primarySSID);
+    
+    char maskedPassword[64];  
+    maskPassword(m_wifiSettings.primaryPassword, 2, 3, maskedPassword);
+    Serial.printf("[WiFiManager::printSettings()]: Primary Password: %s\n", maskedPassword);
+  }
+  
+  if(strlen(m_wifiSettings.secondarySSID) != 0) {
+    Serial.printf("[WiFiManager::printSettings()]: Secondary SSID: %s\n", m_wifiSettings.secondarySSID);
+
+    char maskedPassword[64];  
+    maskPassword(m_wifiSettings.secondaryPassword, 2, 3, maskedPassword);
+    Serial.printf("[WiFiManager::printSettings()]: Secondary Password: %s\n", maskedPassword);
+  }  
 }
 
 bool WiFiManager::saveToFile() {
@@ -238,6 +257,23 @@ bool WiFiManager::setWiFiConfig(const String& localIP, const String& gateway, co
 
 const WifiSettings_t& WiFiManager::getWiFiSettings() const {
   return m_wifiSettings;
+}
+
+void WiFiManager::maskPassword(char* password, int showStart, int showEnd, char* maskedPassword) {
+  int len = strlen(password);
+  int maskLen = len - showStart - showEnd;
+  
+  if (maskLen < 0) {
+    strcpy(maskedPassword, password);
+    return;
+  }
+  
+  strncpy(maskedPassword, password, showStart);
+  for (int i = showStart; i < len - showEnd; i++) {
+    maskedPassword[i] = '*';
+  }
+  strcpy(maskedPassword + len - showEnd, password + len - showEnd);
+  maskedPassword[len] = '\0';
 }
 
 bool WiFiManager::connectToWiFi() {
