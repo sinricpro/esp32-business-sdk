@@ -5,4 +5,4 @@ The SinricPro Business SDK empowers you to develop commercial products quickly. 
 ### Supported MCU's
 Espressif: ESP32, ESP32C3, ESP32S3
 
-For more information, visit https://sinric.pro.
+For more information, visit [Sinric Pro for Business](https://biz.sinric.pro/)
