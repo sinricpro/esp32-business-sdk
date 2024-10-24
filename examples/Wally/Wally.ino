@@ -8,7 +8,7 @@
  *  Status single color LED is connected to GPIO 13
  *
  * @note This code supports ESP32 only.
- * @note Change Tools -> Flash Size -> Minimum SPIFF
+ * @note Change Tools -> Partition Scheme -> Minimal SPIFF (1.9MB APP ...)
  * @note To enable ESP32 logs: Tools -> Core Debug Level -> Verbose
  * @note Install NimBLE (v1.4.2), ArduinoJson (v7.0.4) from library manager.
  * @note First time compliation takes longer 
