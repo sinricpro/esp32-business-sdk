@@ -5,7 +5,6 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <Update.h>
-#include "Settings.h"
 #include "SemVer.h"
 
 /**
@@ -82,7 +81,7 @@ String OTAManager::startOtaUpdate(const String &url) {
   WiFiClientSecure client;
 
 #ifdef ENABLE_SSL_ROOT_CA_CERT_VALIDATION
-  client.setCACert(rootCACertificate);
+  client.setCACert(OTA_CERT_CA);
 #endif
 
   HTTPClient https;

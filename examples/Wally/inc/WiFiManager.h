@@ -3,8 +3,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include "FS.h"
-#include "SPIFFS.h"
-#include "Settings.h"
+#include "SPIFFS.h" 
 
 struct WifiSettings_t {
   char primarySSID[32];        ///< Primary SSID of the WiFi network.
@@ -253,9 +252,9 @@ bool WiFiManager::connectToWiFi() {
   }
 
   if (connected) {
-    Serial.println("Connected to WiFi!");
+    Serial.println("[WiFiManager::connectToWiFi()]: Connected to WiFi!");
   } else {
-    Serial.println("Failed to connect to WiFi!");
+    Serial.println("[WiFiManager::connectToWiFi()]: Failed to connect to WiFi!");
   }
 
   return connected;
@@ -269,7 +268,7 @@ bool WiFiManager::connectToWiFi(const char* wifi_ssid, const char* wifi_password
   WiFi.disconnect();
   delay(10);
 
-  Serial.print("Connecting to ");
+  Serial.print("[WiFiManager::connectToWiFi()]: Connecting to ");
   Serial.println(wifi_ssid);
 
   WiFi.setSleep(false);

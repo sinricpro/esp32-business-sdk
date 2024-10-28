@@ -1,6 +1,8 @@
 /**
  * @brief Example firmware for two-channel relay controller (Wally) using SinricPro ESP32 Business SDK
  *
+ * Change Tools -> Partition Scheme -> Minimum SPIFF
+ *
  * Features: 
  *  Two switches are connected to GPIO 32, 33
  *  Relays are connected to GPIO 27, 14
@@ -8,7 +10,6 @@
  *  Status single color LED is connected to GPIO 13
  *
  * @note This code supports ESP32 only.
- * @note Change Tools -> Flash Size -> Minimum SPIFF
  * @note To enable ESP32 logs: Tools -> Core Debug Level -> Verbose
  * @note Install NimBLE (v1.4.2), ArduinoJson (v7.0.4) from library manager.
  * @note First time compliation takes longer 
@@ -19,28 +20,28 @@
 
 #include <Arduino.h>
 #include <SinricProBusinessSdk.h>
+#include <ArduinoJson.h>
 
 #include "Settings.h"
-#include "ProductConfigManager.h"
-#include "WiFiManager.h"
+#include "inc/ProductConfigManager.h"
+#include "inc/WiFiManager.h"
+#include "inc/HealthManager.h"
+#include "inc/OTAManager.h"
 #include "WiFiProvisioningManager.h"
-#include "OTAManager.h"
 #include "ModuleSettingsManager.h"
-#include "HealthManager.h"
 
 #include "SinricPro.h"
 #include "SinricProSwitch.h"
 
 // Global variables and objects
-ProductConfig_t m_config;
-ProductConfigManager m_productConfig(m_config);
-WiFiManager m_wifiManager;
-WiFiProvisioningManager m_provisioningManager(m_productConfig, m_wifiManager);
-ModuleSettingsManager m_moduleSettingsManager(m_wifiManager);
-OTAManager m_otaManager;
-HealthManager m_healthManager;
-
-unsigned long m_lastHeartbeatMills = 0;
+ProductConfig_t g_config;
+ProductConfigManager g_productConfig(g_config);
+WiFiManager g_wifiManager;
+WiFiProvisioningManager g_provisioningManager(g_productConfig, g_wifiManager);
+ModuleSettingsManager g_moduleSettingsManager(g_wifiManager);
+OTAManager g_otaManager;
+HealthManager g_healthManager;
+unsigned long g_lastHeartbeatMills = 0;
 
 // GPIO for push buttons
 static uint8_t gpio_reset = 0;
@@ -78,8 +79,8 @@ void ARDUINO_ISR_ATTR isr(void *arg) {
  * @brief Clear settings and reboot the device.
  */
 void factoryResetAndReboot() {
-  m_productConfig.clear();
-  m_wifiManager.clear();
+  g_productConfig.clear();
+  g_wifiManager.clear();
   ESP.restart();
 }
 
@@ -98,7 +99,7 @@ void handleSwitchButtonPress() {
     if (switch1_power_state) { digitalWrite(gpio_relay1, HIGH); } else { digitalWrite(gpio_relay1, LOW); };
 
     // Update server
-    SinricProSwitch& mySwitch1 = SinricPro[m_config.switch_1_id];
+    SinricProSwitch& mySwitch1 = SinricPro[g_config.switch_1_id];
     mySwitch1.sendPowerStateEvent(switch1_power_state);
 
   } else if (switch_2.pressed) {
@@ -112,7 +113,7 @@ void handleSwitchButtonPress() {
     if (switch2_power_state) { digitalWrite(gpio_relay2, HIGH); } else { digitalWrite(gpio_relay2, LOW); }
 
     // Update server
-    SinricProSwitch& mySwitch2 = SinricPro[m_config.switch_2_id];
+    SinricProSwitch& mySwitch2 = SinricPro[g_config.switch_2_id];
     mySwitch2.sendPowerStateEvent(switch2_power_state);
   }
 
@@ -140,11 +141,11 @@ void handleSwitchButtonPress() {
  * @brief Callback function for power state changes
  */
 bool onPowerState(const String& deviceId, bool& state) {
-  if (strcmp(m_config.switch_1_id, deviceId.c_str()) == 0) {
+  if (strcmp(g_config.switch_1_id, deviceId.c_str()) == 0) {
     Serial.printf("[onPowerState()]: Change device: %s, power state changed to %s\r\n", deviceId.c_str(), state ? "on" : "off");
     switch1_power_state = state;
     if (switch1_power_state) { digitalWrite(gpio_relay1, HIGH); } else { digitalWrite(gpio_relay1, LOW); } ;
-  } else if (strcmp(m_config.switch_2_id, deviceId.c_str()) == 0) {
+  } else if (strcmp(g_config.switch_2_id, deviceId.c_str()) == 0) {
     Serial.printf("[onPowerState()]: Change device: %s, power state changed to %s\r\n", deviceId.c_str(), state ? "on" : "off");
     switch2_power_state = state;
     if (switch2_power_state) { digitalWrite(gpio_relay2, HIGH); } else { digitalWrite(gpio_relay2, LOW); }
@@ -159,7 +160,7 @@ bool onPowerState(const String& deviceId, bool& state) {
  * @brief Callback function for setting module settings 
  */
 bool onSetModuleSetting(const String& id, const String& value) {
-  SetModuleSettingResult_t result = m_moduleSettingsManager.handleSetModuleSetting(id, value);
+  SetModuleSettingResult_t result = g_moduleSettingsManager.handleSetModuleSetting(id, value);
   if (!result.success) {
     SinricPro.setResponseMessage(std::move(result.message));
   }
@@ -170,7 +171,7 @@ bool onSetModuleSetting(const String& id, const String& value) {
  * @brief Callback function for OTA updates
  */
 bool onOTAUpdate(const String& url, int major, int minor, int patch, bool forceUpdate) {
-  OtaUpdateResult_t result = m_otaManager.handleOTAUpdate(FIRMWARE_VERSION, url, major, minor, patch, forceUpdate);
+  OtaUpdateResult_t result = g_otaManager.handleOTAUpdate(FIRMWARE_VERSION, url, major, minor, patch, forceUpdate);
   if (!result.success) {
     SinricPro.setResponseMessage(std::move(result.message));
   }
@@ -183,10 +184,10 @@ bool onOTAUpdate(const String& url, int major, int minor, int patch, bool forceU
 void setupSinricPro() {
   Serial.printf("[setupSinricPro()]: Setup SinricPro.\r\n");
 
-  SinricProSwitch& mySwitch1 = SinricPro[m_config.switch_1_id];
+  SinricProSwitch& mySwitch1 = SinricPro[g_config.switch_1_id];
   mySwitch1.onPowerState(onPowerState);
 
-  SinricProSwitch& mySwitch2 = SinricPro[m_config.switch_2_id];
+  SinricProSwitch& mySwitch2 = SinricPro[g_config.switch_2_id];
   mySwitch2.onPowerState(onPowerState);
 
   SinricPro.onConnected([]() {
@@ -198,19 +199,19 @@ void setupSinricPro() {
   });
 
   SinricPro.onPong([](uint32_t since) {
-    m_lastHeartbeatMills = millis();
+    g_lastHeartbeatMills = millis();
   });
 
   // SinricPro.restoreDeviceStates(true); If you want to restore the last know state from server!
 
   SinricPro.onReportHealth([&](String& healthReport) {
-    return m_healthManager.reportHealth(healthReport);
+    return g_healthManager.reportHealth(healthReport);
   });
 
   SinricPro.onSetSetting(onSetModuleSetting);
   SinricPro.onOTAUpdate(onOTAUpdate);
 
-  SinricPro.begin(m_config.appKey, m_config.appSecret);
+  SinricPro.begin(g_config.appKey, g_config.appSecret);
 }
 
 /**
@@ -264,7 +265,7 @@ void setupSPIFFS() {
  */
 void handleNoHeartbeat() {
   unsigned long currentMillis = millis();
-  if (currentMillis - m_lastHeartbeatMills >= NO_HEART_BEAT_RESET_INTERVAL) {
+  if (currentMillis - g_lastHeartbeatMills >= NO_HEART_BEAT_RESET_INTERVAL) {
     Serial.println("[handleNoHeartbeat()]: No heartbeat for 15 mins. Restarting ESP32...");
     ESP.restart();
   }
@@ -277,8 +278,8 @@ void handleNoHeartbeat() {
 void setupConfig() {
   Serial.printf("[setupConfig()]: Loading product & wifi config...\r\n");
 
-  if (m_productConfig.loadConfig()) {    
-    if(!m_wifiManager.loadConfig()) {
+  if (g_productConfig.loadConfig()) {    
+    if(!g_wifiManager.loadConfig()) {
       Serial.printf("[setupConfig()]: WiFi config load failed. corrupted?...\r\n");
       factoryResetAndReboot();
       return;
@@ -287,7 +288,7 @@ void setupConfig() {
     // start provisioning process
     Serial.printf("[setupConfig()]: Beginning provisioning...\r\n");
 
-    if (!m_provisioningManager.beginProvision(PRODUCT_ID)) {
+    if (!g_provisioningManager.beginProvision(PRODUCT_ID)) {
       Serial.printf("[setupConfig()]: Provisioning failed. Restarting device.\r\n");
       ESP.restart();  // Restart the ESP if provisioning fails
     }
@@ -304,7 +305,7 @@ void setupWiFi() {
   unsigned long startMillis = millis();
 
   // Attempt to connect to WiFi
-  while (!m_wifiManager.connectToWiFi()) {
+  while (!g_wifiManager.connectToWiFi()) {
     Serial.printf("[loadConfigAndSetupWiFi()]: Cannot connect to WiFi. Retry in 30 seconds!\r\n");
     delay(30000);  // Wait for 30 seconds before retrying
     Serial.printf("[loadConfigAndSetupWiFi()]: Attempting reconnection...\r\n");

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
-#include <ArduinoJson.h>
-#include "WiFiManager.h"
+#include "inc/WiFiManager.h"
 
 // Define constants for setting types
 #define SET_WIFI_PRIMARY "pro.sinric::set.wifi.primary"
@@ -107,5 +105,6 @@ SetModuleSettingResult_t ModuleSettingsManager::handleSetModuleSetting(const Str
     }
   }
 
+  Serial.printf("[ModuleSettingsManager.handleSetModuleSetting()]: message:%s \r\n", result.message.c_str());
   return result;
 }

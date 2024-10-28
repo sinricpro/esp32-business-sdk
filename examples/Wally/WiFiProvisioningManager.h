@@ -7,9 +7,8 @@
 
 #pragma once
 
-#include <SinricProBusinessSdk.h>
-#include "ProductConfigManager.h"
-#include "WiFiManager.h"
+#include "inc/ProductConfigManager.h"
+#include "inc/WiFiManager.h"
 
 /**
  * @class WiFiProvisioningManager
