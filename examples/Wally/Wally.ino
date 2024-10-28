@@ -89,12 +89,12 @@ void factoryResetAndReboot() {
  */
 void handleSwitchButtonPress() {
    if (switch_1.pressed) {
-    Serial.printf("Switch 1 has been changed\n");
+    Serial.printf("[handleSwitchButtonPress()]: Switch 1 has been changed\n");
     switch_1.pressed = false;
     
     // Toggle switch 1 power state
     switch1_power_state = !switch1_power_state;
-    Serial.printf("Toggle State to %s.\n", switch1_power_state ? "true" : "false");
+    Serial.printf("[handleSwitchButtonPress()]: Toggle State to %s.\n", switch1_power_state ? "true" : "false");
 
     if (switch1_power_state) { digitalWrite(gpio_relay1, HIGH); } else { digitalWrite(gpio_relay1, LOW); };
 
@@ -103,12 +103,12 @@ void handleSwitchButtonPress() {
     mySwitch1.sendPowerStateEvent(switch1_power_state);
 
   } else if (switch_2.pressed) {
-    Serial.printf("Switch 2 has been changed\n");
+    Serial.printf("[handleSwitchButtonPress()]: Switch 2 has been changed\n");
     switch_2.pressed = false;
     
     // Toggle switch 2 power state
     switch2_power_state = !switch2_power_state;
-    Serial.printf("Toggle State to %s.\n", switch2_power_state ? "true" : "false");
+    Serial.printf("[handleSwitchButtonPress()]: Toggle State to %s.\n", switch2_power_state ? "true" : "false");
 
     if (switch2_power_state) { digitalWrite(gpio_relay2, HIGH); } else { digitalWrite(gpio_relay2, LOW); }
 
@@ -119,7 +119,7 @@ void handleSwitchButtonPress() {
 
   // Read external button to restart or factory reset
   if (digitalRead(gpio_reset) == LOW) {  // Push button pressed
-    Serial.printf("Reset Button Pressed!\n");
+    Serial.printf("[handleSwitchButtonPress()]: Reset Button Pressed!\n");
     delay(100); // handle debounce
     int startTime = millis();
     while (digitalRead(gpio_reset) == LOW) {
@@ -128,10 +128,10 @@ void handleSwitchButtonPress() {
     int endTime = millis();
 
     if ((endTime - startTime) > 10000) {
-      Serial.printf("Reset to factory.\n"); // pressed for more than 10secs, reset all
+      Serial.printf("[handleSwitchButtonPress()]: Reset to factory.\n"); // pressed for more than 10secs, reset all
       factoryResetAndReboot();
     } else if ((endTime - startTime) > 3000) {
-      Serial.printf("Restart ESP32.\n");
+      Serial.printf("[handleSwitchButtonPress()]: Restart ESP32.\n");
       ESP.restart();
     }
   }
@@ -299,20 +299,20 @@ void setupConfig() {
  * @brief Connects to WiFi 
  */
 void setupWiFi() {
-  Serial.printf("[loadConfigAndSetupWiFi()]: Loading config...\r\n");
+  Serial.printf("[setupWiFi()]: Loading config...\r\n");
 
   // Set up timeout for WiFi connection attempts
   unsigned long startMillis = millis();
 
   // Attempt to connect to WiFi
   while (!g_wifiManager.connectToWiFi()) {
-    Serial.printf("[loadConfigAndSetupWiFi()]: Cannot connect to WiFi. Retry in 30 seconds!\r\n");
+    Serial.printf("[setupWiFi()]: Cannot connect to WiFi. Retry in 30 seconds!\r\n");
     delay(30000);  // Wait for 30 seconds before retrying
-    Serial.printf("[loadConfigAndSetupWiFi()]: Attempting reconnection...\r\n");
+    Serial.printf("[setupWiFi()]: Attempting reconnection...\r\n");
 
     // Check if timeout has been reached
     if ((millis() - startMillis) > WIFI_CONNECTION_TIMEOUT_MS) {
-      Serial.printf("[loadConfigAndSetupWiFi()]: Connection retry timeout. Restarting ESP...\r\n");
+      Serial.printf("[setupWiFi()]: Connection retry timeout. Restarting ESP...\r\n");
       ESP.restart();  // Restart the ESP if connection fails after timeout
     }
   }

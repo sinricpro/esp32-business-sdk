@@ -1,0 +1,56 @@
+{
+  "name": "SinricProBusinessSdk",
+  "keywords": "sinricpro, sinric, alexa, google home, iot, sinricpro for business",
+  "description": "Library to build commercial products using SinricPro",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sinricpro/esp32-business-sdk"
+  },
+  "authors": [
+    {
+      "name": "SinricPro",
+      "email": "support@sinric.com",
+      "maintainer": true
+    }
+  ],
+  "version": "1.0.0",
+  "frameworks": "arduino",
+  "platforms": [
+    "espressif32"
+  ],
+  "dependencies": [
+    {
+      "name": "ArduinoJson",
+      "version": "^7.0.3",
+      "platforms": [
+        "espressif32"
+      ]
+    },
+    {
+      "name": "WebSockets",
+      "version": "^2.6.1",
+      "platforms": [
+        "espressif32"
+      ]
+    },
+    {
+      "name": "NimBLE-Arduino",
+      "version": "^1.4.2",
+      "platforms": [
+        "espressif32"
+      ]
+    },
+    {
+      "name": "SinricPro",
+      "version": "^3.2.1",
+      "platforms": [
+        "espressif32"
+      ]
+    }
+  ],
+  "examples": [
+    "examples/*/*.ino",
+    "examples/*/*/*.ino"
+  ],
+  "license": "CC-BY-SA-4.0"
+}
