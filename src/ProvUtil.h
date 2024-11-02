@@ -16,5 +16,5 @@ class ProvUtil {
       static std::string to_string(int a);
       static uint32_t getChipId32();
       static String getMacAddress();      
-      static void wait(int period);
+      static void wait(uint32_t period);
 };

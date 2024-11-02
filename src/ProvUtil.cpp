@@ -6,7 +6,9 @@
  */
 
 #include "ProvUtil.h"
- 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 /**
  * @brief Get the ESP32/8266 ChipId
  * @return uint32_t Chip Id
@@ -39,8 +41,12 @@ std::string ProvUtil::to_string(int a) {
 }
 
 //wait approx. [period] ms
-void ProvUtil::wait(int ms) {
-  unsigned long start = millis();
-  while (millis() - start < ms) delay(10);
-}
+void ProvUtil::wait(uint32_t sleep_ms) {
+  TickType_t start_time = xTaskGetTickCount();
+  TickType_t delay_ticks = pdMS_TO_TICKS(sleep_ms);
   
+  while ((xTaskGetTickCount() - start_time) < delay_ticks) {
+      // Yield to other tasks
+      vTaskDelay(1);
+  }
+} 
