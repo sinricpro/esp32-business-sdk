@@ -79,10 +79,7 @@ OtaUpdateResult_t OTAManager::handleOTAUpdate(const String &firmwareVersion, con
 
 String OTAManager::startOtaUpdate(const String &url) {
   WiFiClientSecure client;
-
-#ifdef ENABLE_SSL_ROOT_CA_CERT_VALIDATION
-  client.setCACert(OTA_CERT_CA);
-#endif
+  client.setInsecure();
 
   HTTPClient https;
   Serial.print("[OTAManager.startOtaUpdate()]: begin...\n");
