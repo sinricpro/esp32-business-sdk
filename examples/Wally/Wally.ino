@@ -33,6 +33,10 @@
 #include "SinricPro.h"
 #include "SinricProSwitch.h"
 
+#if !defined(ESP_ARDUINO_VERSION) || ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 1, 0)
+  #error "This sketch requires ESP32 Core version 3.1.0 or newer. Please update your ESP32 Core."
+#endif
+
 // Global variables and objects
 ProductConfig_t g_config;
 ProductConfigManager g_productConfig(g_config);
