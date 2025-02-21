@@ -49,11 +49,10 @@ class BLEProvClass : protected NimBLECharacteristicCallbacks, NimBLEServerCallba
     void handleWiFiList(NimBLECharacteristic* pCharacteristic);
     void handleProvInfo(NimBLECharacteristic* pCharacteristic);
 
-    virtual void onWrite(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc) override;
-    virtual void onConnect(NimBLEServer* pServer) override;
-    virtual void onConnect(BLEServer* pServer, ble_gap_conn_desc* desc) override;
-    virtual void onDisconnect(NimBLEServer* pServer) override;
-    virtual void onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) override;
+    virtual void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
+    virtual void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override;
+    virtual void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override;
+    virtual void onMTUChange(uint16_t MTU, NimBLEConnInfo& connInfo) override;
 
     bool m_begin; 
     String m_retailItemId;

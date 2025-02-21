@@ -13,7 +13,7 @@
       "maintainer": true
     }
   ],
-  "version": "1.1.1",
+  "version": "1.2.1",
   "frameworks": "arduino",
   "platforms": [
     "espressif32"
@@ -35,14 +35,14 @@
     },
     {
       "name": "NimBLE-Arduino",
-      "version": "^1.4.2",
+      "version": "^2.2.1",
       "platforms": [
         "espressif32"
       ]
     },
     {
       "name": "SinricPro",
-      "version": "^3.2.1",
+      "version": "^3.5.1",
       "platforms": [
         "espressif32"
       ]
