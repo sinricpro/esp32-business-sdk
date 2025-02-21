@@ -186,13 +186,14 @@ bool WiFiProv::startBLEConfig() {
   bool didTimeout = false;
   
   while (1) {
-    delay(50); // TODO Need?
+    delay(1); // always delay in the loop to allow other tasks to run
     
     if(m_loopCallback) m_loopCallback(provState.getState());
 
     if (BLEProv.bleConfigDone()) {
       provState.setState(SUCCESS);
       DEBUG_PROV(PSTR("[WiFiProv.startBLEConfig()]: BLE setup completed!\r\n")); 
+      ProvUtil::wait(2000);
       BLEProv.stop();
       BLEProv.deinit();
       break;
