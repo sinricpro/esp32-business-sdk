@@ -15,4 +15,4 @@
 #define BLE_PROV_VERSION              1                   // provisioning protocol version
 #define BLE_FRAGMENT_SIZE             180                 // BLE message size. Capped at 180 because IPhone 8 limitations.
 #define PRODUCT_CONFIG_FILE           "/prod_config.json" // product configuration file 
-#define BUSINESS_SDK_VERSION          "1.1.1"             // SDK version  
+#define BUSINESS_SDK_VERSION          "1.1.2"             // SDK version  
