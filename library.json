@@ -21,28 +21,28 @@
   "dependencies": [
     {
       "name": "ArduinoJson",
-      "version": "^7.0.3",
+      "version": "7.0.3",
       "platforms": [
         "espressif32"
       ]
     },
     {
       "name": "WebSockets",
-      "version": "^2.6.1",
+      "version": "2.6.1",
       "platforms": [
         "espressif32"
       ]
     },
     {
       "name": "NimBLE-Arduino",
-      "version": "^1.4.2",
+      "version": "1.4.2",
       "platforms": [
         "espressif32"
       ]
     },
     {
       "name": "SinricPro",
-      "version": "^3.2.1",
+      "version": "3.4.0",
       "platforms": [
         "espressif32"
       ]
