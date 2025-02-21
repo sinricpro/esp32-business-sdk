@@ -10,13 +10,22 @@
  *  Status single color LED is connected to GPIO 13
  *
  * @note This code supports ESP32 only.
- * @note To enable ESP32 logs: Tools -> Core Debug Level -> Verbose
+ * @note To enable ESP32 logs: Tools -> Core Debug Level -> Verbose (to see provisioing and BLE logs)
  * @note Install NimBLE (v1.4.2), ArduinoJson (v7.0.4) from library manager.
  * @note First time compliation takes longer 
  */
 
 #define PRODUCT_ID        ""      /* Product ID from SinricPro Buiness Portal. */
 #define FIRMWARE_VERSION  "1.1.1" /* Your firmware version. Must be above SinricPro.h! */
+
+// #define ENABLE_DEBUG       /* Enable SinricPro SDK Logs. */
+
+#ifdef ENABLE_DEBUG
+#define DEBUG_ESP_PORT Serial
+#define NODEBUG_WEBSOCKETS
+#define NDEBUG
+#endif
+
 
 #include <Arduino.h>
 #include <SinricProBusinessSdk.h>

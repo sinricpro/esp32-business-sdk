@@ -10,3 +10,12 @@ First stable release.
 
 fix: device disconnected error at the end of provisioning.
 feat: refactor wally example.
+
+## [1.1.2] - 2025-02-22
+
+fix: premature exit bug 
+chore: clean up examples/Wally-PIO/platformio.ini
+
+## [1.1.3] - 2025-02-22
+
+feat: sdk logging to use CORE_DEBUG_LEVEL
