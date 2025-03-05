@@ -19,3 +19,7 @@ chore: clean up examples/Wally-PIO/platformio.ini
 ## [1.1.3] - 2025-02-22
 
 feat: sdk logging to use CORE_DEBUG_LEVEL
+
+## [1.1.5] - 2025-03-05
+
+chore: Bump SinricPro SDK version to 3.5.0
