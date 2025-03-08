@@ -4,10 +4,3 @@ otadata,  data, ota,     0xE000,  0x2000,
 app0,     app,  ota_0,   0x10000, 0x1FA000,
 app1,     app,  ota_1,   0x210000, 0x1FA000,
 spiffs,   data, spiffs,  0x40B000, 0x20000,
-
-#20480 bytes for NVS 
-#8192 bytes for ota data
-#2072576 bytes OTA Partition 0
-#2072576 bytes OTA Partition 1
-#131072 bytes SPIFFS
-# total 4MB
